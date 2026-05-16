@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Histórico — SGCM</title>
+  <link rel="stylesheet" href="../css/main.css" />
+</head>
+<body>
+
+<div class="app-layout">
+  <!-- OVERLAY MOBILE: escurece o fundo e fecha a sidebar ao toque -->
+  <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon" id="sidebarEmoji">✂️</div>
+      <div>
+        <div class="sidebar-logo-text" id="sidebarBusinessName">Carregando...</div>
+        <div class="sidebar-logo-sub">Painel Administrativo</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Menu Principal</div>
+      <a href="../index.html" class="nav-item" data-page="#dashboard"><span class="nav-item-icon">📊</span> Dashboard</a>
+      <a href="clientes.html" class="nav-item" data-page="#clientes"><span class="nav-item-icon">👥</span> Clientes</a>
+      <a href="servicos.html" class="nav-item" data-page="#servicos"><span class="nav-item-icon">✨</span> Serviços</a>
+      <a href="agendamentos.html" class="nav-item" data-page="#agendamentos">
+        <span class="nav-item-icon">📅</span> Agendamentos
+        <span class="nav-badge" id="agBadge" style="display:none">0</span>
+      </a>
+      <div class="nav-section-label" style="margin-top:8px">Relatórios</div>
+      <a href="historico.html" class="nav-item active" data-page="#historico"><span class="nav-item-icon">📋</span> Histórico</a>
+      <div class="nav-section-label" style="margin-top:8px">Sistema</div>
+      <a href="config.html" class="nav-item" data-page="#config"><span class="nav-item-icon">⚙️</span> Configurações</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar" id="ownerAvatar">J</div>
+        <div class="user-info">
+          <div class="user-info-name" id="ownerName">João</div>
+          <div class="user-info-role">Administrador</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+
+      <!-- Hamburguer: visível apenas em mobile (≤768px) -->
+      <button class="menu-toggle" id="menuToggle"
+              aria-label="Abrir menu de navegação"
+              aria-expanded="false"
+              aria-controls="sidebar">
+        <div class="hamburger" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </button>
+
+      <div class="topbar-title" id="topbarPageTitle">Histórico</div>
+
+      <div class="topbar-search">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Buscar no histórico..." id="topbarSearchInput" />
+      </div>
+      <div class="topbar-actions">
+        <button class="topbar-btn" data-tooltip="Notificações" aria-label="Notificações">
+          🔔
+        </button>
+        <button class="dark-mode-toggle" id="darkModeToggleTopbar">🌙</button>
+        <button class="topbar-btn" onclick="Auth.logout()" data-tooltip="Sair">🚪</button>
+        <div class="topbar-avatar" id="topbarAvatar" aria-label="Usuário">A</div>
+      </div>
+
+    </header>
+
+    <main class="page-content">
+
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1>📋 Histórico de Atendimentos</h1>
+          <p id="histCount">Carregando...</p>
+        </div>
+      </div>
+
+      <!-- Resumo financeiro -->
+      <div class="stat-cards" style="margin-bottom:24px">
+        <div class="stat-card" style="--stat-color:var(--green);--stat-color-light:var(--green-light)">
+          <div class="stat-card-icon">💰</div>
+          <div class="stat-card-value" id="receitaTotal">R$ 0</div>
+          <div class="stat-card-label">Receita Total</div>
+        </div>
+        <div class="stat-card" style="--stat-color:var(--primary);--stat-color-light:var(--primary-light)">
+          <div class="stat-card-icon">📊</div>
+          <div class="stat-card-value" id="totalAtend">0</div>
+          <div class="stat-card-label">Total Atendimentos</div>
+        </div>
+        <div class="stat-card" style="--stat-color:var(--purple);--stat-color-light:var(--purple-light)">
+          <div class="stat-card-icon">📈</div>
+          <div class="stat-card-value" id="ticketMedio">R$ 0</div>
+          <div class="stat-card-label">Ticket Médio</div>
+        </div>
+        <div class="stat-card" style="--stat-color:var(--yellow);--stat-color-light:var(--yellow-light)">
+          <div class="stat-card-icon">📅</div>
+          <div class="stat-card-value" id="receitaMes">R$ 0</div>
+          <div class="stat-card-label">Receita Este Mês</div>
+        </div>
+      </div>
+
+      <!-- Filtros -->
+      <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center">
+        <div class="page-search-input" style="flex:1;max-width:280px">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchHist" placeholder="Buscar por cliente ou serviço..." />
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <label style="font-size:0.82rem;font-weight:600;color:var(--text-muted)">De:</label>
+          <input type="date" id="filterDe" class="form-control" style="width:auto;padding:6px 10px;font-size:0.82rem" onchange="renderHistorico()" />
+          <label style="font-size:0.82rem;font-weight:600;color:var(--text-muted)">Até:</label>
+          <input type="date" id="filterAte" class="form-control" style="width:auto;padding:6px 10px;font-size:0.82rem" onchange="renderHistorico()" />
+          <button class="btn btn-secondary btn-sm" onclick="clearFilters()">✕ Limpar</button>
+        </div>
+      </div>
+
+      <!-- Tabela -->
+      <div class="card" style="overflow:hidden">
+        <div class="table-wrapper" style="border:none;border-radius:0">
+          <table>
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Serviço</th>
+                <th>Valor</th>
+                <th>Data</th>
+                <th>Hora</th>
+                <th>Registrado em</th>
+              </tr>
+            </thead>
+            <tbody id="histTableBody"></tbody>
+          </table>
+        </div>
+        <div id="histEmpty" class="empty-state hidden">
+          <div class="empty-state-icon">📋</div>
+          <h3>Nenhum atendimento registrado</h3>
+          <p>Os atendimentos aparecem aqui quando concluídos nos Agendamentos.</p>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<div class="notifications-wrapper" id="notificationsWrapper"></div>
+<script>
+// ──────────────────────────────────────────
+// EXPORTAR PDF
+// ──────────────────────────────────────────
+function exportToPDF() {
+  const hist = getFilteredHistorico();
+  const config = DB.getConfig();
+  
+  if (hist.length === 0) {
+    Notify.warning('Nada para exportar', 'Não há registros no histórico no período selecionado.');
+    return;
+  }
+  
+  // Cria uma janela de impressão
+  const printWindow = window.open('', '_blank');
+  
+  const total = hist.reduce((acc, h) => acc + (parseFloat(h.valor) || 0), 0);
+  const ticketMedio = total / hist.length;
+  
+  printWindow.document.write(
+  '<!DOCTYPE html>' +
+  '<html>' +
+  '<head>' +
+  `<title>Relatório - ${escapeHTML(config.nome || 'SGCM')}</title>` +
+    '<meta charset="UTF-8">' +
+    '<style>' +
+    '* { margin: 0; padding: 0; box-sizing: border-box; }' +
+    'body { font-family: "Segoe UI", Arial, sans-serif; padding: 40px; color: #333; }' +
+    '.header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #2563EB; }' +
+    '.header h1 { font-size: 24px; margin-bottom: 5px; }' +
+    '.header p { color: #666; font-size: 12px; }' +
+    '.stats { display: flex; justify-content: space-around; margin-bottom: 30px; gap: 20px; }' +
+    '.stat-box { background: #f3f4f6; padding: 15px; border-radius: 10px; text-align: center; flex: 1; }' +
+    '.stat-box .value { font-size: 28px; font-weight: bold; color: #2563EB; }' +
+    '.stat-box .label { font-size: 12px; color: #666; margin-top: 5px; }' +
+    'table { width: 100%; border-collapse: collapse; margin-top: 20px; }' +
+    'th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 12px; }' +
+    'th { background: #f3f4f6; font-weight: bold; }' +
+    '.footer { margin-top: 30px; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #ddd; padding-top: 20px; }' +
+    '@media print { body { padding: 20px; } .no-print { display: none; } }' +
+    '</style>' +
+    '</head>' +
+    '<body>' +
+    `<div class="header">
+      <h1>📋 ${escapeHTML(config.nome || 'SGCM')} - Relatório de Atendimentos</h1>
+      <p>Gerado em: ${new Date().toLocaleString('pt-BR')}</p>
+      <p>Período: ${escapeHTML(document.getElementById('filterDe')?.value || 'Todas')} até ${escapeHTML(document.getElementById('filterAte')?.value || 'Todas')}</p>
+    </div>` +
+    '<div class="stats">' +
+      `<div class="stat-box"><div class="value">${Format.currency(total)}</div><div class="label">Receita Total</div></div>` +
+      `<div class="stat-box"><div class="value">${hist.length}</div><div class="label">Atendimentos</div></div>` +
+      `<div class="stat-box"><div class="value">${Format.currency(ticketMedio)}</div><div class="label">Ticket Médio</div></div>` +
+    '</div>' +
+    '<table>' +
+      '<thead><tr><th>Cliente</th><th>Serviço</th><th>Valor</th><th>Data</th><th>Hora</th></tr></thead>' +
+      '<tbody>' +
+        hist.map(h => {
+          const c = DB.getClienteById(h.clienteId);
+          const s = DB.getServicoPorId(h.servicoId);
+          return `<tr>` +
+            `<td>${escapeHTML(c?.nome || 'Removido')}</td>` +
+            `<td>${escapeHTML(s?.nome || 'Removido')}</td>` +
+            `<td>${escapeHTML(Format.currency(h.valor))}</td>` +
+            `<td>${escapeHTML(Format.date(h.data))}</td>` +
+            `<td>${escapeHTML(h.hora || '—')}</td>` +
+          `</tr>`;
+        }).join('') +
+      '</tbody>' +
+    '</table>' +
+    '<div class="footer"><p>Relatório gerado pelo SGCM - Sistema de Gerenciamento Comercial</p></div>' +
+    '<div class="no-print" style="text-align:center;margin-top:20px">' +
+      '<button onclick="window.print()" style="padding:10px 20px;background:#2563EB;color:white;border:none;border-radius:5px;cursor:pointer">🖨️ Imprimir / Salvar PDF</button>' +
+    '</div>' +
+    '<script>// Auto-abrir diálogo de impressão (opcional)// setTimeout(() => window.print(), 500);<\/script>' +
+    '</body></html>'
+  );
+  
+  printWindow.document.close();
+  Notify.success('Relatório gerado', 'A janela de impressão foi aberta. Use "Salvar como PDF" para exportar.');
+}
+
+// Helper para pegar histórico filtrado (reutilizado do render)
+function getFilteredHistorico() {
+  let hist = DB.getHistorico();
+  const filterDe = document.getElementById('filterDe')?.value;
+  const filterAte = document.getElementById('filterAte')?.value;
+  const search = document.getElementById('searchHist')?.value || '';
+  
+  if (filterDe) hist = hist.filter(h => (h.data || '') >= filterDe);
+  if (filterAte) hist = hist.filter(h => (h.data || '') <= filterAte);
+  
+  if (search) {
+    const q = search.toLowerCase();
+    hist = hist.filter(h => {
+      const c = DB.getClienteById(h.clienteId);
+      const s = DB.getServicoPorId(h.servicoId);
+      return (c?.nome||'').toLowerCase().includes(q) || (s?.nome||'').toLowerCase().includes(q);
+    });
+  }
+  
+  return hist;
+}
+
+  function renderHistorico(search = '') {
+    const tbody = document.getElementById('histTableBody');
+    const empty = document.getElementById('histEmpty');
+
+    let hist = DB.getHistorico();
+
+    const filterDe = document.getElementById('filterDe').value;
+    const filterAte = document.getElementById('filterAte').value;
+    if (filterDe) hist = hist.filter(h => (h.data || '') >= filterDe);
+    if (filterAte) hist = hist.filter(h => (h.data || '') <= filterAte);
+
+    if (search) {
+      const q = search.toLowerCase();
+      hist = hist.filter(h => {
+        const c = DB.getClienteById(h.clienteId);
+        const s = DB.getServicoPorId(h.servicoId);
+        return (c?.nome||'').toLowerCase().includes(q) || (s?.nome||'').toLowerCase().includes(q);
+      });
+    }
+
+    // Stats
+    const total = hist.reduce((acc, h) => acc + (parseFloat(h.valor) || 0), 0);
+    const mes = new Date().toISOString().slice(0,7);
+    const totalMes = hist
+      .filter(h => (h.registradoEm || '').startsWith(mes))
+      .reduce((acc, h) => acc + (parseFloat(h.valor) || 0), 0);
+    const ticket = hist.length > 0 ? total / hist.length : 0;
+
+    document.getElementById('receitaTotal').textContent = Format.currency(total);
+    document.getElementById('totalAtend').textContent = hist.length;
+    document.getElementById('ticketMedio').textContent = Format.currency(ticket);
+    document.getElementById('receitaMes').textContent = Format.currency(totalMes);
+    document.getElementById('histCount').textContent =
+      `${hist.length} atendimento${hist.length !== 1 ? 's' : ''} registrado${hist.length !== 1 ? 's' : ''}`;
+
+    tbody.innerHTML = '';
+
+    if (hist.length === 0) {
+      empty.classList.remove('hidden');
+      return;
+    }
+    empty.classList.add('hidden');
+
+    hist.forEach(h => {
+      const c = DB.getClienteById(h.clienteId);
+      const s = DB.getServicoPorId(h.servicoId);
+      let color = avatarColor(c?.nome || '');
+      if (!color || typeof color !== 'string' || !color.match(/^#[0-9A-Fa-f]{3,6}$/)) color = '#cccccc';
+      const tr = document.createElement('tr');
+      // Monta o avatar via JS para evitar problemas de template literal no style
+      const avatarDiv = document.createElement('div');
+      avatarDiv.className = 'avatar';
+      avatarDiv.textContent = Format.initials(c?.nome||'?');
+      avatarDiv.style.backgroundColor = color;
+      avatarDiv.style.width = '28px';
+      avatarDiv.style.height = '28px';
+      avatarDiv.style.fontSize = '10px';
+      const clientCell = document.createElement('div');
+      clientCell.className = 'client-cell';
+      clientCell.appendChild(avatarDiv);
+      const nameSpan = document.createElement('span');
+      nameSpan.style.fontWeight = '600';
+      if (c?.nome) nameSpan.textContent = c.nome; else nameSpan.innerHTML = "<span style='color:var(--text-muted);'>Removido</span>";
+      clientCell.appendChild(nameSpan);
+      const tdClient = document.createElement('td');
+      tdClient.appendChild(clientCell);
+      // Monta as outras células via template string
+      tr.appendChild(tdClient);
+      // Monta as outras células manualmente para evitar problemas de template literal
+      const tdServico = document.createElement('td');
+      tdServico.style.fontWeight = '500';
+      if (s?.nome) tdServico.textContent = s.nome; else tdServico.innerHTML = "<span style='color:var(--text-muted);'>Removido</span>";
+      tr.appendChild(tdServico);
+
+      const tdValor = document.createElement('td');
+      tdValor.style.fontWeight = '700';
+      tdValor.style.color = 'var(--green)';
+      tdValor.textContent = Format.currency(h.valor);
+      tr.appendChild(tdValor);
+
+      const tdData = document.createElement('td');
+      tdData.textContent = Format.date(h.data);
+      tr.appendChild(tdData);
+
+      const tdHora = document.createElement('td');
+      tdHora.style.fontFamily = "'JetBrains Mono',monospace";
+      tdHora.style.color = 'var(--text-muted)';
+      tdHora.textContent = h.hora || '—';
+      tr.appendChild(tdHora);
+
+      const tdRegistrado = document.createElement('td');
+      tdRegistrado.style.color = 'var(--text-muted)';
+      tdRegistrado.style.fontSize = '0.8rem';
+      tdRegistrado.textContent = Format.dateTime(h.registradoEm);
+      tr.appendChild(tdRegistrado);
+      tbody.appendChild(tr);
+    });
+  }
+
+  function clearFilters() {
+    document.getElementById('filterDe').value = '';
+    document.getElementById('filterAte').value = '';
+    document.getElementById('searchHist').value = '';
+    renderHistorico();
+  }
+
+  document.getElementById('searchHist').addEventListener('input', (e) => renderHistorico(e.target.value));
+  document.getElementById('topbarSearchInput')?.addEventListener('input', (e) => {
+    document.getElementById('searchHist').value = e.target.value;
+    renderHistorico(e.target.value);
+  });
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      RemoteDB.initFromConfig();
+      if (RemoteDB.configured) await RemoteDB.pullAndImportAll();
+    } catch (e) {}
+    renderHistorico();
+    document.getElementById('topbarAvatar').textContent = (DB.getConfig().owner || 'A')[0].toUpperCase();
+  });
+</script>
+
+<script src="../js/db.js"></script>
+<script src="../js/ui.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/mobile.js"></script>
+<script src="../js/remote-db.js"></script>
+</body>
+</html>

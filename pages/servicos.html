@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Serviços — SGCM</title>
+  <link rel="stylesheet" href="../css/main.css" />
+</head>
+<body>
+
+<div class="app-layout">
+  <!-- OVERLAY MOBILE: escurece o fundo e fecha a sidebar ao toque -->
+  <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon" id="sidebarEmoji">✂️</div>
+      <div>
+        <div class="sidebar-logo-text" id="sidebarBusinessName">Carregando...</div>
+        <div class="sidebar-logo-sub">Painel Administrativo</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Menu Principal</div>
+      <a href="../index.html" class="nav-item" data-page="#dashboard"><span class="nav-item-icon">📊</span> Dashboard</a>
+      <a href="clientes.html" class="nav-item" data-page="#clientes"><span class="nav-item-icon">👥</span> Clientes</a>
+      <a href="servicos.html" class="nav-item active" data-page="#servicos"><span class="nav-item-icon">✨</span> Serviços</a>
+      <a href="agendamentos.html" class="nav-item" data-page="#agendamentos">
+        <span class="nav-item-icon">📅</span> Agendamentos
+        <span class="nav-badge" id="agBadge" style="display:none">0</span>
+      </a>
+      <div class="nav-section-label" style="margin-top:8px">Relatórios</div>
+      <a href="historico.html" class="nav-item" data-page="#historico"><span class="nav-item-icon">📋</span> Histórico</a>
+      <div class="nav-section-label" style="margin-top:8px">Sistema</div>
+      <a href="config.html" class="nav-item" data-page="#config"><span class="nav-item-icon">⚙️</span> Configurações</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar" id="ownerAvatar">J</div>
+        <div class="user-info">
+          <div class="user-info-name" id="ownerName">João</div>
+          <div class="user-info-role">Administrador</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+
+      <!-- Hamburguer: visível apenas em mobile (≤768px) -->
+      <button class="menu-toggle" id="menuToggle"
+              aria-label="Abrir menu de navegação"
+              aria-expanded="false"
+              aria-controls="sidebar">
+        <div class="hamburger" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </button>
+
+      <div class="topbar-title" id="topbarPageTitle">Serviços</div>
+
+      <div class="topbar-search">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Buscar serviços..." id="topbarSearchInput" />
+      </div>
+      <div class="topbar-actions">
+        <button class="topbar-btn" data-tooltip="Notificações" aria-label="Notificações">
+          🔔
+        </button>
+        <button class="dark-mode-toggle" id="darkModeToggleTopbar">🌙</button>
+        <button class="topbar-btn" onclick="Auth.logout()" data-tooltip="Sair">🚪</button>
+        <div class="topbar-avatar" id="topbarAvatar" aria-label="Usuário">A</div>
+      </div>
+
+    </header>
+
+    <main class="page-content">
+
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1>✨ Serviços</h1>
+          <p id="servicosCount">Carregando...</p>
+        </div>
+        <button class="btn btn-primary" onclick="openServicoModal()">
+          ➕ Adicionar Serviço
+        </button>
+      </div>
+
+      <div class="page-search">
+        <div class="page-search-input">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchServicos" placeholder="Buscar por nome do serviço..." />
+        </div>
+      </div>
+
+      <!-- Cards de serviços -->
+      <div id="servicosGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px">
+        <!-- Preenchido via JS -->
+      </div>
+
+      <div id="servicosEmpty" class="empty-state hidden">
+        <div class="empty-state-icon">✨</div>
+        <h3>Nenhum serviço cadastrado</h3>
+        <p>Cadastre seus serviços para começar a criar agendamentos.</p>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- MODAL SERVIÇO -->
+<div class="modal-overlay" id="servicoModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="servicoModalTitle">➕ Novo Serviço</span>
+      <button class="modal-close" onclick="Modal.close('servicoModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="servicoId" />
+      <div class="form-group">
+        <label class="form-label">Nome do Serviço *</label>
+        <input type="text" id="servicoNome" class="form-control" placeholder="Ex: Corte de Cabelo, Manicure..." />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Preço (R$) *</label>
+          <input type="number" id="servicoPreco" class="form-control" placeholder="0,00" step="0.01" min="0" />
+        </div>
+        <div class="form-group" id="duracaoField">
+          <label class="form-label">Duração (minutos)</label>
+          <input type="number" id="servicoDuracao" class="form-control" placeholder="Ex: 30" min="1" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descrição</label>
+        <textarea id="servicoDescricao" class="form-control" placeholder="Descreva o serviço brevemente..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="Modal.close('servicoModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarServico()">💾 Salvar Serviço</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirmOverlay">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <span class="modal-title">⚠️ Confirmar Exclusão</span>
+      <button class="modal-close" onclick="Modal.close('confirmOverlay')">×</button>
+    </div>
+    <div class="modal-body">
+      <p id="confirmMsg" style="color:var(--text-secondary);font-size:0.9rem">Tem certeza?</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="Modal.close('confirmOverlay')">Cancelar</button>
+      <button class="btn btn-danger" id="confirmYes">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<div class="notifications-wrapper" id="notificationsWrapper"></div>
+<script>
+
+// ──────────────────────────────────────────
+// PAGINAÇÃO PARA SERVIÇOS (NOVO PADRÃO)
+// ──────────────────────────────────────────
+const serviceEmojis = ['✂️','💅','🧖','🧴','💇','🪒','🌿','💆','🧘','🌸','💎','🎨'];
+function pickEmoji(name) {
+  let hash = 0;
+  for (const c of (name || '')) hash += c.charCodeAt(0);
+  return serviceEmojis[hash % serviceEmojis.length];
+}
+
+let currentPageServicos = 1;
+let itemsPerPageServicos = 12; // Cards por página
+let filteredServicos = [];
+
+function renderServicosPaginated(filter = '') {
+  const grid = document.getElementById('servicosGrid');
+  const empty = document.getElementById('servicosEmpty');
+  let servicos = DB.getServicos();
+
+  if (filter) {
+    const q = filter.toLowerCase();
+    servicos = servicos.filter(s => (s.nome || '').toLowerCase().includes(q));
+  }
+
+  filteredServicos = servicos;
+  const totalPages = Math.ceil(filteredServicos.length / itemsPerPageServicos);
+
+  if (currentPageServicos > totalPages && totalPages > 0) currentPageServicos = totalPages;
+  if (currentPageServicos < 1) currentPageServicos = 1;
+
+  const start = (currentPageServicos - 1) * itemsPerPageServicos;
+  const end = start + itemsPerPageServicos;
+  const pageServicos = filteredServicos.slice(start, end);
+
+  document.getElementById('servicosCount').textContent =
+    `${filteredServicos.length} serviço${filteredServicos.length !== 1 ? 's' : ''} cadastrado${filteredServicos.length !== 1 ? 's' : ''}`;
+
+  grid.innerHTML = '';
+
+  if (filteredServicos.length === 0) {
+    empty.classList.remove('hidden');
+    document.getElementById('paginationServicos')?.remove();
+    return;
+  }
+
+  empty.classList.add('hidden');
+
+  const config = DB.getConfig();
+  const showDuracao = config.modulos?.duracao !== false;
+
+    pageServicos.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.padding = '20px';
+    card.style.cursor = 'default';
+    card.innerHTML = `
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
+        <div style="width:44px;height:44px;border-radius:var(--radius-md);background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:22px">
+          ${escapeHTML(pickEmoji(s.nome))}
+        </div>
+        <div class="table-actions">
+          <button class="btn btn-secondary btn-sm btn-icon" onclick="editarServico('${escapeHTML(s.id)}')" data-tooltip="Editar">✏️</button>
+          <button class="btn btn-danger btn-sm btn-icon" onclick="excluirServico('${escapeHTML(s.id)}')" data-tooltip="Excluir">🗑️</button>
+        </div>
+      </div>
+      <div style="font-size:1rem;font-weight:700;color:var(--text-primary);margin-bottom:4px">${escapeHTML(s.nome || '—')}</div>
+      ${s.descricao ? `<div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:12px;line-height:1.5">${escapeHTML(s.descricao)}</div>` : '<div style="margin-bottom:12px"></div>'}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding-top:12px;border-top:1px solid var(--border-soft)">
+        <div style="font-size:1.2rem;font-weight:800;color:var(--primary)">${escapeHTML(Format.currency(s.preco))}</div>
+        ${showDuracao && s.duracao ? `<span class="badge badge-blue">⏱ ${Format.duration(s.duracao)}</span>` : ''}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  renderPaginationServicos(totalPages);
+}
+
+function renderPaginationServicos(totalPages) {
+  let paginationDiv = document.getElementById('paginationServicos');
+  if (!paginationDiv) {
+    paginationDiv = document.createElement('div');
+    paginationDiv.id = 'paginationServicos';
+    paginationDiv.style.cssText = 'display:flex;justify-content:center;gap:8px;margin-top:20px;padding:12px;flex-wrap:wrap';
+    const container = document.querySelector('.page-content');
+    if (container) container.appendChild(paginationDiv);
+  }
+
+  if (totalPages <= 1) {
+    paginationDiv.innerHTML = '';
+    return;
+  }
+
+  let html = '';
+  html += `<button class="btn btn-secondary btn-sm" onclick="changePageServicos(${currentPageServicos - 1})" ${currentPageServicos === 1 ? 'disabled' : ''}>« Anterior</button>`;
+
+  for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+    html += `<button class="btn ${i === currentPageServicos ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="changePageServicos(${i})">${i}</button>`;
+  }
+
+  if (totalPages > 5) {
+    html += `<span style="padding:0 8px">...</span>`;
+    html += `<button class="btn btn-secondary btn-sm" onclick="changePageServicos(${totalPages})">${totalPages}</button>`;
+  }
+
+  html += `<button class="btn btn-secondary btn-sm" onclick="changePageServicos(${currentPageServicos + 1})" ${currentPageServicos === totalPages ? 'disabled' : ''}>Próximo »</button>`;
+
+  paginationDiv.innerHTML = html;
+}
+
+function changePageServicos(page) {
+  currentPageServicos = page;
+  const searchValue = document.getElementById('searchServicos')?.value || '';
+  renderServicosPaginated(searchValue);
+}
+
+function renderServicos(filter = '') {
+  const searchInput = document.getElementById('searchServicos');
+  if (searchInput) searchInput.value = filter;
+  currentPageServicos = 1;
+  renderServicosPaginated(filter);
+}
+
+// Sobrescrever o evento de busca
+const originalSearchServicos = () => {
+  currentPageServicos = 1;
+  renderServicosPaginated(document.getElementById('searchServicos')?.value || '');
+};
+
+// Substituir no DOMContentLoaded
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    RemoteDB.initFromConfig();
+    if (RemoteDB.configured) await RemoteDB.pullAndImportAll();
+  } catch (e) {}
+  renderServicosPaginated();
+  document.getElementById('topbarAvatar').textContent = (DB.getConfig().owner || 'A')[0].toUpperCase();
+  document.getElementById('searchServicos')?.addEventListener('input', originalSearchServicos);
+});
+
+  function openServicoModal() {
+    document.getElementById('servicoId').value = '';
+    document.getElementById('servicoNome').value = '';
+    document.getElementById('servicoPreco').value = '';
+    document.getElementById('servicoDuracao').value = '';
+    document.getElementById('servicoDescricao').value = '';
+    document.getElementById('servicoModalTitle').textContent = '➕ Novo Serviço';
+    Modal.open('servicoModal');
+    setTimeout(() => document.getElementById('servicoNome').focus(), 300);
+  }
+
+  function editarServico(id) {
+    const s = DB.getServicoPorId(id);
+    if (!s) return;
+    document.getElementById('servicoId').value = s.id;
+    document.getElementById('servicoNome').value = s.nome || '';
+    document.getElementById('servicoPreco').value = s.preco || '';
+    document.getElementById('servicoDuracao').value = s.duracao || '';
+    document.getElementById('servicoDescricao').value = s.descricao || '';
+    document.getElementById('servicoModalTitle').textContent = '✏️ Editar Serviço';
+    Modal.open('servicoModal');
+    setTimeout(() => document.getElementById('servicoNome').focus(), 300);
+  }
+
+  function salvarServico() {
+    const nome = document.getElementById('servicoNome').value.trim();
+    const preco = document.getElementById('servicoPreco').value;
+    if (!nome) {
+      Notify.error('Campo obrigatório', 'Informe o nome do serviço.');
+      return;
+    }
+    if (!preco || isNaN(parseFloat(preco))) {
+      Notify.error('Campo obrigatório', 'Informe um preço válido.');
+      return;
+    }
+
+    const servico = {
+      id: document.getElementById('servicoId').value || null,
+      nome,
+      preco: parseFloat(preco).toFixed(2),
+      duracao: document.getElementById('servicoDuracao').value || '',
+      descricao: document.getElementById('servicoDescricao').value.trim(),
+    };
+
+    (async () => {
+      try {
+        if (RemoteDB && RemoteDB.configured) {
+          const remoteSaved = await RemoteDB.saveServico(servico);
+          DB.saveServico(remoteSaved);
+        } else {
+          DB.saveServico(servico);
+        }
+        Modal.close('servicoModal');
+        renderServicos();
+        Notify.success('Serviço salvo!', `"${nome}" foi ${servico.id ? 'atualizado' : 'cadastrado'}.`);
+      } catch (e) {
+        DB.saveServico(servico);
+        Modal.close('servicoModal');
+        renderServicos();
+        Notify.warning('Operação parcial', 'Serviço salvo localmente. Houveram problemas ao salvar remotamente.');
+      }
+    })();
+  }
+
+  // CORRIGIDA: Exclusão com verificação de agendamentos futuros
+function excluirServico(id) {
+  const nome = DB.getServicoPorId(id)?.nome || '';
+  // Verifica se o serviço tem agendamentos futuros (não concluídos)
+  const agendamentos = DB.getAgendamentos();
+  const agendamentosFuturos = agendamentos.filter(ag => {
+    if (ag.servicoId !== id) return false;
+    if (ag.status === 'concluido') return false;
+    
+    // Verifica se a data é hoje ou no futuro
+    const hoje = new Date().toISOString().slice(0, 10);
+    return ag.data >= hoje;
+  });
+  
+  if (agendamentosFuturos.length > 0) {
+    Notify.error(
+      'Não é possível excluir', 
+      `Este serviço possui ${agendamentosFuturos.length} agendamento(s) futuro(s). Conclua ou cancele-os primeiro.`
+    );
+    return;
+  }
+  
+  confirmDelete(`Excluir o serviço "${nome}"? Esta ação não pode ser desfeita.`, () => {
+    (async () => {
+      try {
+        if (RemoteDB && RemoteDB.configured) await RemoteDB.deleteServico(id);
+      } catch (e) {}
+      DB.deleteServico(id);
+      renderServicos();
+      Notify.success('Serviço removido', 'O serviço foi excluído com sucesso.');
+    })();
+  });
+}
+document.getElementById('searchServicos').addEventListener('input', e => {
+  window.servicosCurrentPage = 1;
+  renderServicos(e.target.value);
+});
+
+// inicialização movida para DOMContentLoaded para suportar RemoteDB
+</script>
+
+<script src="../js/db.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/remote-db.js"></script>
+<script src="../js/ui.js"></script>
+<script src="../js/mobile.js"></script>
+</body>
+</html>

@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clientes — SGCM</title>
+  <link rel="stylesheet" href="../css/main.css" />
+</head>
+<body>
+
+<div class="app-layout">
+  <!-- OVERLAY MOBILE: escurece o fundo e fecha a sidebar ao toque -->
+  <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon" id="sidebarEmoji">✂️</div>
+      <div>
+        <div class="sidebar-logo-text" id="sidebarBusinessName">Carregando...</div>
+        <div class="sidebar-logo-sub">Painel Administrativo</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Menu Principal</div>
+      <a href="../index.html" class="nav-item" data-page="#dashboard"><span class="nav-item-icon">📊</span> Dashboard</a>
+      <a href="clientes.html" class="nav-item active" data-page="#clientes"><span class="nav-item-icon">👥</span> Clientes</a>
+      <a href="servicos.html" class="nav-item" data-page="#servicos"><span class="nav-item-icon">✨</span> Serviços</a>
+      <a href="agendamentos.html" class="nav-item" data-page="#agendamentos">
+        <span class="nav-item-icon">📅</span> Agendamentos
+        <span class="nav-badge" id="agBadge" style="display:none">0</span>
+      </a>
+      <div class="nav-section-label" style="margin-top:8px">Relatórios</div>
+      <a href="historico.html" class="nav-item" data-page="#historico"><span class="nav-item-icon">📋</span> Histórico</a>
+      <div class="nav-section-label" style="margin-top:8px">Sistema</div>
+      <a href="config.html" class="nav-item" data-page="#config"><span class="nav-item-icon">⚙️</span> Configurações</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar" id="ownerAvatar">J</div>
+        <div class="user-info">
+          <div class="user-info-name" id="ownerName">João</div>
+          <div class="user-info-role">Administrador</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+
+      <!-- Hamburguer: visível apenas em mobile (≤768px) -->
+      <button class="menu-toggle" id="menuToggle"
+              aria-label="Abrir menu de navegação"
+              aria-expanded="false"
+              aria-controls="sidebar">
+        <div class="hamburger" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </button>
+
+      <div class="topbar-title" id="topbarPageTitle">Clientes</div>
+
+      <div class="topbar-search">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Buscar clientes..." id="topbarSearchInput" />
+      </div>
+      <div class="topbar-actions">
+        <button class="topbar-btn" data-tooltip="Notificações" aria-label="Notificações">
+          🔔
+        </button>
+        <button class="dark-mode-toggle" id="darkModeToggleTopbar">🌙</button>
+        <button class="topbar-btn" onclick="Auth.logout()" data-tooltip="Sair">🚪</button>
+        <div class="topbar-avatar" id="topbarAvatar" aria-label="Usuário">A</div>
+      </div>
+
+    </header>
+
+    <main class="page-content">
+
+      <div class="page-header">
+        <div class="page-header-left" style="display:flex;align-items:center;gap:16px;width:100%">
+          <h1>👥 Clientes</h1>
+          <p id="clientesCount">Carregando...</p>
+          <button class="btn btn-secondary" onclick="exportClientesToPDF()" style="margin-left:auto">
+            📄 Exportar PDF
+          </button>
+        </div>
+        <button class="btn btn-primary" onclick="openClienteModal()">
+          ➕ Adicionar Cliente
+        </button>
+      </div>
+
+      <!-- Busca e Filtros -->
+      <div class="page-search">
+        <div class="page-search-input">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchClientes" placeholder="Buscar por nome, telefone ou email..." />
+        </div>
+      </div>
+
+      <!-- Tabela de Clientes -->
+      <div class="card" style="overflow:hidden">
+        <div class="table-wrapper" style="border:none;border-radius:0">
+          <table>
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Telefone</th>
+                <th>Email</th>
+                <th>Observações</th>
+                <th>Cadastrado em</th>
+                <th style="text-align:right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="clientesTableBody">
+              <!-- Preenchido via JS -->
+            </tbody>
+          </table>
+        </div>
+        <div id="clientesEmpty" class="empty-state hidden">
+          <div class="empty-state-icon">👥</div>
+          <h3>Nenhum cliente cadastrado</h3>
+          <p>Clique em "Adicionar Cliente" para começar a construir sua base.</p>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- MODAL ADICIONAR/EDITAR CLIENTE -->
+<div class="modal-overlay" id="clienteModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="clienteModalTitle">➕ Novo Cliente</span>
+      <button class="modal-close" onclick="Modal.close('clienteModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="clienteId" />
+      <div class="form-row">
+        <div class="form-group" style="grid-column:span 2">
+          <label class="form-label">Nome Completo *</label>
+          <input type="text" id="clienteNome" class="form-control" placeholder="Ex: Ana Paula Silva" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Telefone / WhatsApp</label>
+          <input type="tel" id="clienteTelefone" class="form-control" placeholder="(11) 99999-9999" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" id="clienteEmail" class="form-control" placeholder="email@exemplo.com" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Observações</label>
+        <textarea id="clienteObs" class="form-control" placeholder="Preferências, alergias, informações importantes..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="Modal.close('clienteModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarCliente()">💾 Salvar Cliente</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VER HISTÓRICO DO CLIENTE -->
+<div class="modal-overlay" id="clienteHistModal">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <span class="modal-title" id="clienteHistTitle">📋 Histórico do Cliente</span>
+      <button class="modal-close" onclick="Modal.close('clienteHistModal')">×</button>
+    </div>
+    <div class="modal-body" id="clienteHistBody" style="padding:0">
+      <!-- Preenchido via JS -->
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAÇÃO -->
+<div class="modal-overlay" id="confirmOverlay">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <span class="modal-title">⚠️ Confirmar Exclusão</span>
+      <button class="modal-close" onclick="Modal.close('confirmOverlay')">×</button>
+    </div>
+    <div class="modal-body">
+      <p id="confirmMsg" style="color:var(--text-secondary);font-size:0.9rem">Tem certeza que deseja excluir este cliente?</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="Modal.close('confirmOverlay')">Cancelar</button>
+      <button class="btn btn-danger" id="confirmYes">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<div class="notifications-wrapper" id="notificationsWrapper"></div>
+<script>
+  // ──────────────────────────────────────────
+  // EXPORTAR PDF
+  // ──────────────────────────────────────────
+// ──────────────────────────────────────────
+// EXPORTAR PDF DE CLIENTES
+// ──────────────────────────────────────────
+function exportClientesToPDF() {
+  const clientes = typeof filteredClientes !== 'undefined' && filteredClientes.length > 0 ? filteredClientes : DB.getClientes();
+  const config = DB.getConfig();
+  if (clientes.length === 0) {
+    Notify.warning('Nada para exportar', 'Não há clientes cadastrados.');
+    return;
+  }
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(
+  '<!DOCTYPE html>' +
+  '<html>' +
+  '<head>' +
+  '<title>Clientes - ' + escapeHTML(config.nome || 'SGCM') + '</title>' +
+    '<meta charset="UTF-8">' +
+    '<style>' +
+    '* { margin: 0; padding: 0; box-sizing: border-box; }' +
+    'body { font-family: "Segoe UI", Arial, sans-serif; padding: 40px; color: #333; }' +
+    '.header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #2563EB; }' +
+    '.header h1 { font-size: 24px; margin-bottom: 5px; }' +
+    '.header p { color: #666; font-size: 12px; }' +
+    '.stats { background: #f3f4f6; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px; }' +
+    '.stats .value { font-size: 28px; font-weight: bold; color: #2563EB; }' +
+    'table { width: 100%; border-collapse: collapse; margin-top: 20px; }' +
+    'th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 12px; }' +
+    'th { background: #f3f4f6; font-weight: bold; }' +
+    '.footer { margin-top: 30px; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #ddd; padding-top: 20px; }' +
+    '@media print { body { padding: 20px; } .no-print { display: none; } }' +
+    '</style>' +
+    '</head>' +
+    '<body>' +
+    '<div class="header">' +
+      '<h1>👥 ' + (config.nome || 'SGCM') + ' - Lista de Clientes</h1>' +
+      '<p>Gerado em: ' + new Date().toLocaleString('pt-BR') + '</p>' +
+    '</div>' +
+    '<div class="stats">' +
+      '<div class="value">' + clientes.length + '</div>' +
+      '<div>Clientes Cadastrados</div>' +
+    '</div>' +
+    '<table>' +
+      '<thead>' +
+        '<tr><th>Nome</th><th>Telefone</th><th>Email</th><th>Observações</th><th>Cadastro</th></tr>' +
+      '</thead>' +
+      '<tbody>' +
+        clientes.map(c =>
+          '<tr>' +
+            '<td>' + escapeHTML(c.nome || '—') + '</td>' +
+            '<td>' + escapeHTML(Format.phone ? Format.phone(c.telefone) : (c.telefone || '—')) + '</td>' +
+            '<td>' + escapeHTML(c.email || '—') + '</td>' +
+            '<td>' + escapeHTML(c.obs || '—') + '</td>' +
+            '<td>' + escapeHTML(Format.date ? Format.date(c.createdAt?.slice(0,10)) : (c.createdAt?.slice(0,10) || '—')) + '</td>' +
+          '</tr>'
+        ).join('') +
+      '</tbody>' +
+    '</table>' +
+    '<div class="footer">' +
+      '<p>Relatório gerado pelo SGCM - Sistema de Gerenciamento Comercial</p>' +
+    '</div>' +
+    '<div class="no-print" style="text-align:center;margin-top:20px">' +
+      '<button onclick="window.print()" style="padding:10px 20px;background:#2563EB;color:white;border:none;border-radius:5px;cursor:pointer">🖨️ Imprimir / Salvar PDF</button>' +
+    '</div>' +
+    '</body></html>'
+  );
+  printWindow.document.close();
+  Notify.success('Relatório gerado', 'A janela de impressão foi aberta. Use "Salvar como PDF" para exportar.');
+}
+    
+  
+  // Helper para pegar histórico filtrado (reutilizado do render)
+  function getFilteredHistorico() {
+    let hist = DB.getHistorico();
+    const filterDe = document.getElementById('filterDe')?.value;
+    const filterAte = document.getElementById('filterAte')?.value;
+    const search = document.getElementById('searchHist')?.value || '';
+  
+    if (filterDe) hist = hist.filter(h => (h.data || '') >= filterDe);
+    if (filterAte) hist = hist.filter(h => (h.data || '') <= filterAte);
+  
+    if (search) {
+      const q = search.toLowerCase();
+      hist = hist.filter(h => {
+        const c = DB.getClienteById(h.clienteId);
+        const s = DB.getServicoPorId(h.servicoId);
+        return (c?.nome||'').toLowerCase().includes(q) || (s?.nome||'').toLowerCase().includes(q);
+      });
+    }
+  
+    return hist;
+  }
+  // ──────────────────────────────────────────
+  // PAGINAÇÃO
+  // ──────────────────────────────────────────
+  let currentPage = 1;
+  let itemsPerPage = 10;
+  let filteredClientes = [];
+
+  function renderClientesPaginated() {
+    const tbody = document.getElementById('clientesTableBody');
+    const emptyState = document.getElementById('clientesEmpty');
+    let clientes = DB.getClientes();
+    const filter = document.getElementById('searchClientes')?.value || '';
+  
+    if (filter) {
+      const q = filter.toLowerCase();
+      clientes = clientes.filter(c =>
+        (c.nome || '').toLowerCase().includes(q) ||
+        (c.email || '').toLowerCase().includes(q) ||
+        (c.telefone || '').includes(q)
+      );
+    }
+  
+    filteredClientes = clientes;
+    const totalPages = Math.ceil(filteredClientes.length / itemsPerPage);
+  
+    // Ajusta página atual se necessário
+    if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+  
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    const pageClientes = filteredClientes.slice(start, end);
+  
+    document.getElementById('clientesCount').textContent = 
+      `${filteredClientes.length} cliente${filteredClientes.length !== 1 ? 's' : ''} cadastrado${filteredClientes.length !== 1 ? 's' : ''}`;
+  
+    tbody.innerHTML = '';
+  
+    if (filteredClientes.length === 0) {
+      emptyState.classList.remove('hidden');
+      document.getElementById('paginationControls')?.remove();
+      return;
+    }
+  
+    emptyState.classList.add('hidden');
+  
+    pageClientes.forEach(c => {
+      const color = avatarColor(c.nome);
+      const tr = document.createElement('tr');
+      // Avatar e nome
+      const tdClient = document.createElement('td');
+      const clientCell = document.createElement('div');
+      clientCell.className = 'client-cell';
+      const avatarDiv = document.createElement('div');
+      avatarDiv.className = 'avatar';
+      avatarDiv.textContent = Format.initials(c.nome);
+      avatarDiv.style.backgroundColor = color;
+      clientCell.appendChild(avatarDiv);
+      const nameDiv = document.createElement('div');
+      const nameSpan = document.createElement('div');
+      nameSpan.style.fontWeight = '600';
+      nameSpan.textContent = c.nome || '—';
+      nameDiv.appendChild(nameSpan);
+      clientCell.appendChild(nameDiv);
+      tdClient.appendChild(clientCell);
+      tr.appendChild(tdClient);
+
+      // Telefone
+      const tdPhone = document.createElement('td');
+      tdPhone.className = 'text-mono';
+      tdPhone.textContent = Format.phone(c.telefone);
+      tr.appendChild(tdPhone);
+
+      // Email
+      const tdEmail = document.createElement('td');
+      tdEmail.style.color = 'var(--text-secondary)';
+      tdEmail.textContent = c.email || '—';
+      tr.appendChild(tdEmail);
+
+      // Observação
+      const tdObs = document.createElement('td');
+      tdObs.style.color = 'var(--text-muted)';
+      tdObs.style.maxWidth = '180px';
+      tdObs.style.overflow = 'hidden';
+      tdObs.style.textOverflow = 'ellipsis';
+      tdObs.style.whiteSpace = 'nowrap';
+      tdObs.title = c.obs || '';
+      tdObs.textContent = c.obs || '—';
+      tr.appendChild(tdObs);
+
+      // Data de cadastro
+      const tdCreated = document.createElement('td');
+      tdCreated.style.color = 'var(--text-muted)';
+      tdCreated.textContent = Format.date(c.createdAt?.slice(0,10));
+      tr.appendChild(tdCreated);
+
+      // Ações
+      const tdActions = document.createElement('td');
+      const actionsDiv = document.createElement('div');
+      actionsDiv.className = 'table-actions';
+      actionsDiv.style.justifyContent = 'flex-end';
+      // Botão histórico
+      const btnHist = document.createElement('button');
+      btnHist.className = 'btn btn-secondary btn-sm btn-icon';
+      btnHist.setAttribute('data-tooltip', 'Ver histórico');
+      btnHist.textContent = '📋';
+      btnHist.addEventListener('click', () => verHistorico(c.id));
+      btnHist.setAttribute('data-tooltip', 'Ver histórico');
+      btnHist.textContent = '📋';
+      actionsDiv.appendChild(btnHist);
+      // Botão WhatsApp
+      const btnWhats = document.createElement('button');
+      btnWhats.className = 'btn btn-success btn-sm btn-icon';
+      btnWhats.setAttribute('data-tooltip', 'WhatsApp');
+      btnWhats.textContent = '💬';
+      btnWhats.addEventListener('click', () => whatsappCliente(c.telefone, c.nome));
+      actionsDiv.appendChild(btnWhats);
+      // WhatsApp integrado
+      function whatsappCliente(telefone, nome) {
+        if (!telefone) {
+          Notify.warning('Telefone não cadastrado', 'Adicione um telefone para este cliente.');
+          return;
+        }
+        // Limpa telefone
+        let numero = telefone.replace(/\D/g, '');
+        if (numero.length === 10) numero = '55' + numero;
+        if (numero.length === 11) numero = '55' + numero;
+        const mensagem = encodeURIComponent(`Olá ${nome}! Tudo bem? Estou entrando em contato do sistema SGCM.`);
+        window.open(`https://wa.me/${numero}?text=${mensagem}`, '_blank');
+      }
+      // Botão editar
+      const btnEdit = document.createElement('button');
+      btnEdit.className = 'btn btn-secondary btn-sm btn-icon';
+      btnEdit.setAttribute('data-tooltip', 'Editar');
+      btnEdit.textContent = '✏️';
+      btnEdit.addEventListener('click', () => editarCliente(c.id));
+      actionsDiv.appendChild(btnEdit);
+      // Botão excluir
+      const btnDel = document.createElement('button');
+      btnDel.className = 'btn btn-danger btn-sm btn-icon';
+      btnDel.setAttribute('data-tooltip', 'Excluir');
+      btnDel.textContent = '🗑️';
+      btnDel.addEventListener('click', () => excluirCliente(c.id));
+      actionsDiv.appendChild(btnDel);
+      tdActions.appendChild(actionsDiv);
+      tr.appendChild(tdActions);
+      tbody.appendChild(tr);
+    });
+  
+    renderPaginationControls(totalPages);
+  }
+
+  function renderPaginationControls(totalPages) {
+    let paginationDiv = document.getElementById('paginationControls');
+  
+    if (!paginationDiv) {
+      paginationDiv = document.createElement('div');
+      paginationDiv.id = 'paginationControls';
+      paginationDiv.style.cssText = 'display:flex;justify-content:center;gap:8px;margin-top:20px;padding:12px;flex-wrap:wrap';
+      const tableCard = document.querySelector('.card');
+      if (tableCard) tableCard.appendChild(paginationDiv);
+    }
+  
+    if (totalPages <= 1) {
+      paginationDiv.innerHTML = '';
+      return;
+    }
+  
+    let html = '';
+  
+    // Botão Anterior
+    html += `<button class="btn btn-secondary btn-sm" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>« Anterior</button>`;
+  
+    // Números das páginas
+    const maxVisible = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+  
+    if (endPage - startPage + 1 < maxVisible) {
+      startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+  
+    if (startPage > 1) {
+      html += `<button class="btn btn-secondary btn-sm" onclick="changePage(1)">1</button>`;
+      if (startPage > 2) html += `<span style="padding:0 8px">...</span>`;
+    }
+  
+    for (let i = startPage; i <= endPage; i++) {
+      html += `<button class="btn ${i === currentPage ? 'btn-primary' : 'btn-secondary'} btn-sm" onclick="changePage(${i})">${i}</button>`;
+    }
+  
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) html += '<span style="padding:0 8px">...</span>';
+      html += '<button class="btn btn-secondary btn-sm" onclick="changePage(' + totalPages + ')">' + totalPages + '</button>';
+    }
+  
+    // Botão Próximo
+    html += '<button class="btn btn-secondary btn-sm" onclick="changePage(' + (currentPage + 1) + ')"' + (currentPage === totalPages ? ' disabled' : '') + '>Próximo »</button>';
+  
+    paginationDiv.innerHTML = html;
+  }
+
+  function changePage(page) {
+    currentPage = page;
+    renderClientesPaginated();
+  }
+
+  function renderClientes(search = '') {
+    const searchInput = document.getElementById('searchClientes');
+    if (searchInput) searchInput.value = search;
+    renderClientesPaginated();
+  }
+
+  // Sobrescrever a função de busca para usar paginação
+  const originalSearchHandler = () => {
+    currentPage = 1;
+    renderClientesPaginated();
+  };
+
+  // Atualizar eventos
+  document.getElementById('searchClientes')?.addEventListener('input', () => {
+    currentPage = 1;
+    renderClientesPaginated();
+  });
+
+  // Substituir a chamada inicial
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('topbarAvatar').textContent = (DB.getConfig().owner || 'A')[0].toUpperCase();
+
+    // Aplicar máscara de telefone (preparação)
+    const telefoneInput = document.getElementById('clienteTelefone');
+    if (telefoneInput && typeof setupPhoneMask === 'function') {
+      setupPhoneMask(telefoneInput);
+    }
+  });
+  // ────────────────────────────────────
+
+  // CLIENTES — Lógica
+  // ────────────────────────────────────
+  // Função renderClientes substituída por paginação
+
+  function openClienteModal(id = null) {
+    document.getElementById('clienteId').value = '';
+    document.getElementById('clienteNome').value = '';
+    document.getElementById('clienteTelefone').value = '';
+    document.getElementById('clienteEmail').value = '';
+    document.getElementById('clienteObs').value = '';
+    document.getElementById('clienteModalTitle').textContent = '➕ Novo Cliente';
+    Modal.open('clienteModal');
+    setTimeout(() => document.getElementById('clienteNome').focus(), 300);
+  }
+
+  function editarCliente(id) {
+    const c = DB.getClienteById(id);
+    if (!c) return;
+    document.getElementById('clienteId').value = c.id;
+    document.getElementById('clienteNome').value = c.nome || '';
+    document.getElementById('clienteTelefone').value = c.telefone || '';
+    document.getElementById('clienteEmail').value = c.email || '';
+    document.getElementById('clienteObs').value = c.obs || '';
+    document.getElementById('clienteModalTitle').textContent = '✏️ Editar Cliente';
+    Modal.open('clienteModal');
+    setTimeout(() => document.getElementById('clienteNome').focus(), 300);
+  }
+
+  function salvarCliente() {
+    const nome = document.getElementById('clienteNome').value.trim();
+    if (!nome) {
+      Notify.error('Campo obrigatório', 'Por favor, informe o nome do cliente.');
+      document.getElementById('clienteNome').focus();
+      return;
+    }
+
+    const cliente = {
+      id: document.getElementById('clienteId').value || null,
+      nome,
+      telefone: document.getElementById('clienteTelefone').value.trim(),
+      email: document.getElementById('clienteEmail').value.trim(),
+      obs: document.getElementById('clienteObs').value.trim(),
+    };
+
+    (async () => {
+      try {
+        if (RemoteDB && RemoteDB.configured) {
+          const remoteSaved = await RemoteDB.saveCliente(cliente);
+          // ensure local copy matches remote
+          DB.saveCliente(remoteSaved);
+        } else {
+          DB.saveCliente(cliente);
+        }
+        Modal.close('clienteModal');
+        renderClientes();
+        Notify.success('Cliente salvo!', `${nome} foi ${cliente.id ? 'atualizado' : 'cadastrado'} com sucesso.`);
+      } catch (e) {
+        // fallback local
+        DB.saveCliente(cliente);
+        Modal.close('clienteModal');
+        renderClientes();
+        Notify.warning('Operação parcial', 'Cliente salvo localmente. Houveram problemas ao salvar remotamente.');
+      }
+    })();
+  }
+
+  function excluirCliente(id) {
+    const nome = DB.getClienteById(id)?.nome || '';
+    confirmDelete(`Excluir o cliente "${escapeHTML(nome)}"? Esta ação não pode ser desfeita.`, () => {
+      (async () => {
+        try {
+          if (RemoteDB && RemoteDB.configured) await RemoteDB.deleteCliente(id);
+        } catch (e) {}
+        DB.deleteCliente(id);
+        renderClientes();
+        Notify.success('Cliente removido', 'O cliente foi excluído com sucesso.');
+      })();
+    });
+  }
+
+  function verHistorico(clienteId) {
+    const c = DB.getClienteById(clienteId);
+    if (!c) return;
+
+    const hist = DB.getHistorico().filter(h => h.clienteId === clienteId);
+    const color = avatarColor(c.nome);
+
+    document.getElementById('clienteHistTitle').textContent = `📋 Histórico — ${c.nome}`;
+
+    const body = document.getElementById('clienteHistBody');
+
+    if (hist.length === 0) {
+      body.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><h3>Nenhum atendimento registrado</h3><p>Os atendimentos aparecerão aqui após serem concluídos.</p></div>`;
+    } else {
+      const total = hist.reduce((acc, h) => acc + (parseFloat(h.valor) || 0), 0);
+      // Monta o header do modal manualmente
+      const headerDiv = document.createElement('div');
+      headerDiv.style.padding = '16px 20px';
+      headerDiv.style.background = 'var(--bg)';
+      headerDiv.style.borderBottom = '1px solid var(--border)';
+      headerDiv.style.display = 'flex';
+      headerDiv.style.alignItems = 'center';
+      headerDiv.style.gap = '14px';
+      // Avatar
+      const avatarDiv = document.createElement('div');
+      avatarDiv.className = 'avatar';
+      avatarDiv.textContent = Format.initials(c.nome);
+      avatarDiv.style.backgroundColor = color;
+      avatarDiv.style.width = '44px';
+      avatarDiv.style.height = '44px';
+      avatarDiv.style.fontSize = '16px';
+      headerDiv.appendChild(avatarDiv);
+      // Nome e resumo
+      const infoDiv = document.createElement('div');
+      const nameDiv = document.createElement('div');
+      nameDiv.style.fontWeight = '700';
+      nameDiv.style.fontSize = '1rem';
+      nameDiv.textContent = c.nome;
+      infoDiv.appendChild(nameDiv);
+      const resumoDiv = document.createElement('div');
+      resumoDiv.style.fontSize = '0.8rem';
+      resumoDiv.style.color = 'var(--text-muted)';
+      resumoDiv.textContent = hist.length + ' atendimento' + (hist.length !== 1 ? 's' : '') + ' · Total: ' + Format.currency(total);
+      infoDiv.appendChild(resumoDiv);
+      headerDiv.appendChild(infoDiv);
+      // Monta a tabela como antes
+      let tableHtml = '<table style="width:100%"><thead><tr><th>Serviço</th><th>Data</th><th>Valor</th></tr></thead><tbody>';
+      tableHtml += hist.map(h => {
+        const s = DB.getServicoPorId(h.servicoId);
+        return '<tr>' +
+          '<td>' + (s?.nome || 'Removido') + '</td>' +
+          '<td style="color:var(--text-muted)">' + Format.date(h.data) + '</td>' +
+          '<td style="font-weight:600;color:var(--green)">' + Format.currency(h.valor) + '</td>' +
+        '</tr>';
+      }).join('');
+      tableHtml += '</tbody></table>';
+      body.innerHTML = '';
+      body.appendChild(headerDiv);
+      const tableWrapper = document.createElement('div');
+      tableWrapper.innerHTML = tableHtml;
+      body.appendChild(tableWrapper);
+
+    } // fim do else
+
+    Modal.open('clienteHistModal');
+  }
+
+  // Busca em tempo real
+  function _debounce(fn, delay = 220) {
+    let timer;
+    return (...args) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => fn(...args), delay);
+    };
+  }
+
+  document.getElementById('searchClientes')?.addEventListener('input', _debounce((e) => {
+    currentPage = 1;
+    renderClientesPaginated();
+  }, 220));
+
+  // Busca via topbar
+  const topbarSearch = document.getElementById('topbarSearchInput');
+  const urlParams = new URLSearchParams(window.location.search);
+  const searchParam = urlParams.get('search');
+  if (searchParam) {
+    topbarSearch.value = searchParam;
+    document.getElementById('searchClientes').value = searchParam;
+  }
+  topbarSearch?.addEventListener('input', (e) => {
+    document.getElementById('searchClientes').value = e.target.value;
+    // debounce to avoid frequent re-renders while typing
+    _debounce(() => { currentPage = 1; renderClientesPaginated(); }, 180)();
+  });
+
+  // Salvar com Enter no modal
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && document.getElementById('clienteModal').classList.contains('active')) {
+      if (document.activeElement.tagName !== 'TEXTAREA') salvarCliente();
+    }
+  });
+
+  // Init: se houver RemoteDB configurado, baixar e importar antes de renderizar
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      RemoteDB.initFromConfig();
+      if (RemoteDB.configured) await RemoteDB.pullAndImportAll();
+    } catch (e) {
+      // fallback silencioso
+    }
+    renderClientes(searchParam || '');
+    document.getElementById('topbarAvatar').textContent = (DB.getConfig().owner || 'A')[0].toUpperCase();
+  });
+</script>
+
+<script src="../js/db.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/remote-db.js"></script>
+<script src="../js/ui.js"></script>
+<script src="../js/mobile.js"></script>
+</body>
+</html>

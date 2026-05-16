@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Comissões — SGCM</title>
+  <link rel="stylesheet" href="../css/main.css" />
+</head>
+<body>
+
+<div class="app-layout">
+  <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon" id="sidebarEmoji">✂️</div>
+      <div>
+        <div class="sidebar-logo-text" id="sidebarBusinessName">Carregando...</div>
+        <div class="sidebar-logo-sub">Painel Administrativo</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Menu Principal</div>
+      <a href="../index.html" class="nav-item"><span class="nav-item-icon">📊</span> Dashboard</a>
+      <a href="clientes.html" class="nav-item"><span class="nav-item-icon">👥</span> Clientes</a>
+      <a href="servicos.html" class="nav-item"><span class="nav-item-icon">✨</span> Serviços</a>
+      <a href="agendamentos.html" class="nav-item"><span class="nav-item-icon">📅</span> Agendamentos</a>
+      <div class="nav-section-label" style="margin-top:8px">Relatórios</div>
+      <a href="historico.html" class="nav-item"><span class="nav-item-icon">📋</span> Histórico</a>
+      <a href="comissoes.html" class="nav-item active"><span class="nav-item-icon">💰</span> Comissões</a>
+      <div class="nav-section-label" style="margin-top:8px">Sistema</div>
+      <a href="funcionarios.html" class="nav-item admin-only"><span class="nav-item-icon">👥</span> Funcionários</a>
+      <a href="config.html" class="nav-item admin-only"><span class="nav-item-icon">⚙️</span> Configurações</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar" id="ownerAvatar">A</div>
+        <div class="user-info">
+          <div class="user-info-name" id="ownerName">Carregando...</div>
+          <div class="user-info-role" id="userRole">—</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <button class="menu-toggle" id="menuToggle" aria-label="Abrir menu">
+        <div class="hamburger"><span></span><span></span><span></span></div>
+      </button>
+      <div class="topbar-title">💰 Comissões</div>
+      <div class="topbar-actions">
+        <button class="topbar-btn" data-tooltip="Notificações" aria-label="Notificações">
+          🔔
+        </button>
+        <button class="dark-mode-toggle" id="darkModeToggleTopbar">🌙</button>
+        <button class="topbar-btn" onclick="Auth.logout()" data-tooltip="Sair">🚪</button>
+        <div class="topbar-avatar" id="topbarAvatar" aria-label="Usuário">A</div>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1>💰 Comissões dos Funcionários</h1>
+          <p>Relatório de comissões baseado nos atendimentos concluídos.</p>
+          <p style="color:var(--text-secondary);font-size:0.9rem;max-width:760px">
+            Esta tela mostra quanto cada funcionário gerou em receita e qual o valor de comissão a pagar no período selecionado.
+          </p>
+        </div>
+        <button class="btn btn-secondary" onclick="exportComissoesPDF()">📄 Exportar PDF</button>
+      </div>
+
+      <!-- Filtros -->
+      <div class="stat-cards" style="margin-bottom:24px">
+        <div class="stat-card">
+          <div class="stat-card-icon">💰</div>
+          <div class="stat-card-value" id="totalComissoes">R$ 0</div>
+          <div class="stat-card-label">Total em Comissões</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon">📊</div>
+          <div class="stat-card-value" id="totalAtendimentosComissoes">0</div>
+          <div class="stat-card-label">Atendimentos no Período</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center">
+        <div style="display:flex;gap:8px;align-items:center">
+          <label style="font-size:0.82rem;font-weight:600">Período:</label>
+          <input type="date" id="filterDe" class="form-control" style="width:auto" />
+          <span>até</span>
+          <input type="date" id="filterAte" class="form-control" style="width:auto" />
+          <button class="btn btn-primary btn-sm" onclick="renderComissoes()">Filtrar</button>
+          <button class="btn btn-secondary btn-sm" onclick="limparFiltros()">Limpar</button>
+        </div>
+      </div>
+
+      <div class="card" style="overflow:hidden">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Funcionário</th>
+                <th>Cargo</th>
+                <th>Atendimentos</th>
+                <th>Receita Gerada</th>
+                <th>Comissão (%)</th>
+                <th>Valor da Comissão</th>
+              </tr>
+            </thead>
+            <tbody id="comissoesTableBody"></tbody>
+          </table>
+        </div>
+        <div id="comissoesEmpty" class="empty-state hidden">
+          <div class="empty-state-icon">💰</div>
+          <h3>Nenhum dado no período</h3>
+          <p>Não há atendimentos concluídos no período selecionado.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirmOverlay">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <span class="modal-title">⚠️ Confirmar</span>
+      <button class="modal-close" onclick="Modal.close('confirmOverlay')">×</button>
+    </div>
+    <div class="modal-body">
+      <p id="confirmMsg">Confirmar ação?</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="Modal.close('confirmOverlay')">Cancelar</button>
+      <button class="btn btn-danger" id="confirmYes">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="notifications-wrapper" id="notificationsWrapper"></div>
+
+<script>
+  // ──────────────────────────────────────────
+  // CÁLCULO DE COMISSÕES
+  // ──────────────────────────────────────────
+  function calcularComissoes() {
+    const usuarios = Auth.getUsuarios().filter(u => u.ativo);
+    const historico = DB.getHistorico();
+    
+    let filterDe = document.getElementById('filterDe')?.value;
+    let filterAte = document.getElementById('filterAte')?.value;
+    
+    let filteredHist = [...historico];
+    if (filterDe) filteredHist = filteredHist.filter(h => h.data >= filterDe);
+    if (filterAte) filteredHist = filteredHist.filter(h => h.data <= filterAte);
+
+    const porFuncionario = new Map();
+    let semFuncionarioAtendimentos = 0;
+    let semFuncionarioReceita = 0;
+
+    filteredHist.forEach(h => {
+      const valor = parseFloat(h.valor) || 0;
+      if (h.funcionarioId) {
+        const atual = porFuncionario.get(h.funcionarioId) || { atendimentos: 0, receitaGerada: 0 };
+        atual.atendimentos += 1;
+        atual.receitaGerada += valor;
+        porFuncionario.set(h.funcionarioId, atual);
+      } else {
+        semFuncionarioAtendimentos += 1;
+        semFuncionarioReceita += valor;
+      }
+    });
+    
+    const resultados = usuarios.map(usuario => {
+      const dados = porFuncionario.get(usuario.id) || { atendimentos: 0, receitaGerada: 0 };
+      const valorComissao = dados.receitaGerada * ((parseFloat(usuario.comissao) || 0) / 100);
+
+      return {
+        id: usuario.id,
+        nome: usuario.nome,
+        role: usuario.role,
+        atendimentos: dados.atendimentos,
+        receitaGerada: dados.receitaGerada,
+        comissaoPercent: usuario.comissao || 0,
+        valorComissao,
+      };
+    });
+
+    if (semFuncionarioAtendimentos > 0) {
+      resultados.push({
+        id: 'sem-funcionario',
+        nome: 'Sem funcionário',
+        role: '',
+        atendimentos: semFuncionarioAtendimentos,
+        receitaGerada: semFuncionarioReceita,
+        comissaoPercent: 0,
+        valorComissao: 0,
+      });
+    }
+
+    const totalGeralComissoes = resultados.reduce((acc, item) => acc + (parseFloat(item.valorComissao) || 0), 0);
+    const totalAtendimentos = filteredHist.length;
+    
+    return { 
+      resultados: resultados.sort((a, b) => b.valorComissao - a.valorComissao),
+      totalComissoes: totalGeralComissoes, 
+      totalAtendimentos: totalAtendimentos 
+    };
+  }
+  
+  function renderComissoes() {
+    const tbody = document.getElementById('comissoesTableBody');
+    const empty = document.getElementById('comissoesEmpty');
+    const { resultados, totalComissoes, totalAtendimentos } = calcularComissoes();
+    
+    document.getElementById('totalComissoes').textContent = Format.currency(totalComissoes);
+    document.getElementById('totalAtendimentosComissoes').textContent = totalAtendimentos;
+    
+    tbody.innerHTML = '';
+    
+    if (resultados.length === 0 || totalAtendimentos === 0) {
+      empty.classList.remove('hidden');
+      return;
+    }
+    
+    empty.classList.add('hidden');
+    
+    resultados.forEach(f => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><strong>${escapeHTML(f.nome)}</strong></td>
+        <td>
+          <span class="badge" style="${f.role === 'admin' ? 'background:var(--purple-light);color:var(--purple)' : f.role === 'atendente' ? 'background:var(--primary-light);color:var(--primary)' : 'background:var(--border-soft);color:var(--text-muted)'}">
+            ${f.role === 'admin' ? 'Admin' : f.role === 'atendente' ? 'Atendente' : 'Sem vínculo'}
+          </span>
+        </td>
+        <td>${escapeHTML(String(f.atendimentos))}</td>
+        <td>${escapeHTML(Format.currency(f.receitaGerada))}</td>
+        <td>${escapeHTML(String(f.comissaoPercent))}%</td>
+        <td style="font-weight:700;color:var(--green)">${escapeHTML(Format.currency(f.valorComissao))}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+  
+  function limparFiltros() {
+    document.getElementById('filterDe').value = '';
+    document.getElementById('filterAte').value = '';
+    renderComissoes();
+  }
+  
+  function exportComissoesPDF() {
+    const { resultados, totalComissoes, totalAtendimentos } = calcularComissoes();
+    const config = DB.getConfig();
+    
+    if (resultados.length === 0 || totalAtendimentos === 0) {
+      Notify.warning('Nada para exportar', 'Não há dados de comissão no período selecionado.');
+      return;
+    }
+    
+    const printWindow = window.open('', '_blank');
+    const filterDe = document.getElementById('filterDe')?.value || 'Todas';
+    const filterAte = document.getElementById('filterAte')?.value || 'Todas';
+    
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Comissões - ${escapeHTML(config.nome || 'SGCM')}</title>
+        <meta charset="UTF-8">
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            padding: 40px;
+            color: #333;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #2563EB;
+          }
+          .header h1 { font-size: 24px; margin-bottom: 5px; }
+          .header p { color: #666; font-size: 12px; }
+          .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            gap: 20px;
+          }
+          .stat-box {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            flex: 1;
+          }
+          .stat-box .value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2563EB;
+          }
+          .stat-box .label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+          }
+          th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+            font-size: 12px;
+          }
+          th {
+            background: #f3f4f6;
+            font-weight: bold;
+          }
+          .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 10px;
+            color: #999;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+          }
+          @media print {
+            body { padding: 20px; }
+            .no-print { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>💰 ${escapeHTML(config.nome || 'SGCM')} - Relatório de Comissões</h1>
+          <p>Gerado em: ${new Date().toLocaleString('pt-BR')}</p>
+          <p>Período: ${escapeHTML(filterDe)} até ${escapeHTML(filterAte)}</p>
+        </div>
+        
+        <div class="stats">
+          <div class="stat-box">
+            <div class="value">${Format.currency(totalComissoes)}</div>
+            <div class="label">Total em Comissões</div>
+          </div>
+          <div class="stat-box">
+            <div class="value">${totalAtendimentos}</div>
+            <div class="label">Atendimentos no Período</div>
+          </div>
+        </div>
+        
+        <table>
+          <thead>
+            <tr><th>Funcionário</th><th>Cargo</th><th>Atendimentos</th><th>Receita Gerada</th><th>Comissão %</th><th>Valor da Comissão</th></tr>
+          </thead>
+          <tbody>
+            ${resultados.map(f => `
+              <tr>
+                <td>${escapeHTML(f.nome)}</td>
+                <td>${f.role === 'admin' ? 'Administrador' : f.role === 'atendente' ? 'Atendente' : 'Sem vínculo'}</td>
+                <td>${escapeHTML(String(f.atendimentos))}</td>
+                <td>${escapeHTML(Format.currency(f.receitaGerada))}</td>
+                <td>${escapeHTML(String(f.comissaoPercent))}%</td>
+                <td>${escapeHTML(Format.currency(f.valorComissao))}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <div class="footer">
+          <p>Relatório gerado pelo SGCM - Sistema de Gerenciamento Comercial</p>
+        </div>
+        
+        <div class="no-print" style="text-align:center;margin-top:20px">
+          <button onclick="window.print()" style="padding:10px 20px;background:#2563EB;color:white;border:none;border-radius:5px;cursor:pointer">🖨️ Imprimir / Salvar PDF</button>
+        </div>
+      </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
+    Notify.success('Relatório gerado', 'A janela de impressão foi aberta.');
+  }
+  
+  // Inicialização
+  document.addEventListener('DOMContentLoaded', async () => {
+    // Verificar se está logado
+    if (!Auth.isLoggedIn()) {
+      window.location.href = 'login.html';
+      return;
+    }
+    try {
+      RemoteDB.initFromConfig();
+      if (RemoteDB.configured) await RemoteDB.pullAndImportAll();
+    } catch (e) {}
+
+    renderComissoes();
+    
+    // Atualizar informações do usuário na sidebar
+    const currentUser = Auth.getCurrentUser();
+    if (currentUser) {
+      const topbarAvatar = document.getElementById('topbarAvatar');
+      if (topbarAvatar) topbarAvatar.textContent = (currentUser.nome || 'A')[0];
+      document.getElementById('ownerName').textContent = currentUser.nome || 'Admin';
+      document.getElementById('userRole').textContent = currentUser.role === 'admin' ? 'Administrador' : 'Atendente';
+    }
+  });
+</script>
+
+<script src="../js/db.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/remote-db.js"></script>
+<script src="../js/ui.js"></script>
+<script src="../js/mobile.js"></script>
+</body>
+</html>

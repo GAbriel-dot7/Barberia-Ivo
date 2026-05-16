@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — SGCM</title>
+  <link rel="stylesheet" href="../css/main.css" />
+  <style>
+    body {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .login-container {
+      max-width: 420px;
+      width: 100%;
+      margin: 20px;
+    }
+    .login-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-xl);
+      padding: 40px 32px;
+      box-shadow: var(--shadow-lg);
+      animation: fadeIn 0.5s ease;
+    }
+    .login-logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .login-logo-icon {
+      width: 64px;
+      height: 64px;
+      background: var(--primary);
+      border-radius: var(--radius-lg);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin-bottom: 16px;
+    }
+    .login-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-align: center;
+    }
+    .login-sub {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 4px;
+    }
+    .login-footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon" id="loginEmoji">✂️</div>
+      <div class="login-title" id="loginBusinessName">SGCM</div>
+      <div class="login-sub">Sistema de Gerenciamento Comercial</div>
+    </div>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" id="loginEmail" class="form-control" placeholder="admin@sistema.com" required autofocus />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Senha</label>
+        <input type="password" id="loginSenha" class="form-control" placeholder="••••••" required />
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%; margin-top: 8px;">
+        🔓 Entrar no Sistema
+      </button>
+    </form>
+
+    <div class="login-footer">
+      <p>Credenciais demo:<br>admin@sistema.com / admin123<br>atendente@sistema.com / atendente123</p>
+    </div>
+  </div>
+</div>
+
+<div class="notifications-wrapper" id="notificationsWrapper"></div>
+
+<script src="../js/db.js"></script>
+<script src="../js/ui.js"></script>
+<script src="../js/auth.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const config = DB.getConfig();
+    const loginEmoji = document.getElementById('loginEmoji');
+    const loginBusinessName = document.getElementById('loginBusinessName');
+    const loginForm = document.getElementById('loginForm');
+    const loginEmail = document.getElementById('loginEmail');
+    const loginSenha = document.getElementById('loginSenha');
+
+    if (Auth.isLoggedIn()) {
+      window.location.href = '../index.html';
+      return;
+    }
+
+    if (loginForm) {
+      loginForm.addEventListener('submit', event => {
+        event.preventDefault();
+
+        const email = loginEmail?.value.trim() || '';
+        const senha = loginSenha?.value || '';
+
+        const result = Auth.login(email, senha);
+        if (!result.success) {
+          Notify.error('Falha no login', result.error || 'Verifique seus dados de acesso.');
+          return;
+        }
+
+        Notify.success('Bem-vindo!', `Login realizado como ${result.user?.nome || 'usuário'}.`);
+        window.location.href = '../index.html';
+      });
+    }
+    
+    if (loginEmoji) loginEmoji.textContent = config.emoji || '✂️';
+    if (loginBusinessName) loginBusinessName.textContent = config.nome || 'SGCM';
+  });
+</script>
+
+</body>
+</html>

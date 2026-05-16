@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — SGCM</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="app-layout">
+  <!-- OVERLAY MOBILE: escurece o fundo e fecha a sidebar ao toque -->
+  <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon" id="sidebarEmoji">✂️</div>
+      <div>
+        <div class="sidebar-logo-text" id="sidebarBusinessName">Carregando...</div>
+        <div class="sidebar-logo-sub">Painel Administrativo</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Menu Principal</div>
+      <a href="index.html" class="nav-item active" data-page="#dashboard">
+        <span class="nav-item-icon">📊</span> Dashboard
+      </a>
+      <a href="pages/clientes.html" class="nav-item" data-page="#clientes">
+        <span class="nav-item-icon">👥</span> Clientes
+      </a>
+      <a href="pages/servicos.html" class="nav-item" data-page="#servicos">
+        <span class="nav-item-icon">✨</span> Serviços
+      </a>
+      <a href="pages/agendamentos.html" class="nav-item" data-page="#agendamentos">
+        <span class="nav-item-icon">📅</span> Agendamentos
+        <span class="nav-badge" id="agBadge" style="display:none">0</span>
+      </a>
+      <div class="nav-section-label" style="margin-top:8px">Relatórios</div>
+      <a href="pages/historico.html" class="nav-item" data-page="#historico">
+        <span class="nav-item-icon">📋</span> Histórico
+      </a>
+      <a href="pages/comissoes.html" class="nav-item" data-page="#comissoes">
+        <span class="nav-item-icon">💰</span> Comissões
+      </a>
+      <div class="nav-section-label" style="margin-top:8px">Sistema</div>
+      <a href="pages/funcionarios.html" class="nav-item admin-only" data-page="#funcionarios">
+        <span class="nav-item-icon">👥</span> Funcionários
+      </a>
+      <a href="pages/config.html" class="nav-item admin-only" data-page="#config">
+        <span class="nav-item-icon">⚙️</span> Configurações
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar" id="ownerAvatar">J</div>
+        <div class="user-info">
+          <div class="user-info-name" id="ownerName">João</div>
+          <div class="user-info-role">Administrador</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+
+      <!-- Hamburguer: visível apenas em mobile (≤768px) -->
+      <button class="menu-toggle" id="menuToggle"
+              aria-label="Abrir menu de navegação"
+              aria-expanded="false"
+              aria-controls="sidebar">
+        <div class="hamburger" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </button>
+
+      <div class="topbar-title" id="topbarPageTitle">Dashboard</div>
+
+      <div class="topbar-search">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Buscar clientes, serviços..." id="topbarSearchInput" />
+      </div>
+      <div class="topbar-actions">
+        <button class="topbar-btn" id="notifBtn" data-tooltip="Notificações" aria-label="Notificações">
+          🔔
+          <span class="notif-dot" id="notifDot" style="display:none"></span>
+        </button>
+        <button class="dark-mode-toggle" id="darkModeToggleTopbar">🌙</button>
+        <button class="topbar-btn" onclick="Auth.logout()" data-tooltip="Sair">🚪</button>
+        <div class="topbar-avatar" id="topbarAvatar" aria-label="Usuário">A</div>
+      </div>
+
+    </header>
+
+    <!-- PAGE CONTENT -->
+    <main class="page-content">
+
+      <!-- HEADER -->
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1>Bom dia! 👋</h1>
+          <p id="dashboardDate">Hoje, carregando...</p>
+        </div>
+        <a href="pages/agendamentos.html" class="btn btn-primary">
+          📅 Novo Agendamento
+        </a>
+      </div>
+
+      <!-- STAT CARDS -->
+      <div class="stat-cards">
+        <div class="stat-card" style="--stat-color: var(--primary); --stat-color-light: var(--primary-light)">
+          <div class="stat-card-icon">👥</div>
+          <div class="stat-card-value" id="statClientes">0</div>
+          <div class="stat-card-label">Clientes Cadastrados</div>
+          <div class="stat-card-change change-up" id="statClientesChange">↑ Total geral</div>
+        </div>
+        <div class="stat-card" style="--stat-color: var(--yellow); --stat-color-light: var(--yellow-light)">
+          <div class="stat-card-icon">📅</div>
+          <div class="stat-card-value" id="statAgendamentos">0</div>
+          <div class="stat-card-label">Agendamentos Hoje</div>
+          <div class="stat-card-change" id="statAgendamentosChange" style="color:var(--yellow)">📆 Programados</div>
+        </div>
+        <div class="stat-card" style="--stat-color: var(--green); --stat-color-light: var(--green-light)">
+          <div class="stat-card-icon">✅</div>
+          <div class="stat-card-value" id="statConcluidos">0</div>
+          <div class="stat-card-label">Concluídos Hoje</div>
+          <div class="stat-card-change change-up" id="statConcluidosChange">↑ Atendimentos</div>
+        </div>
+        <div class="stat-card" style="--stat-color: var(--purple); --stat-color-light: var(--purple-light)">
+          <div class="stat-card-icon">💰</div>
+          <div class="stat-card-value" id="statReceita">R$ 0</div>
+          <div class="stat-card-label">Receita do Mês</div>
+          <div class="stat-card-change change-up">↑ Este mês</div>
+        </div>
+      </div>
+
+      <!-- Gráficos -->
+      <div class="dashboard-grid">
+        <div class="card col-2">
+          <div class="card-header">
+            <span class="card-title">📈 Receita Mensal</span>
+          </div>
+          <div class="card-body">
+            <canvas id="revenueChart" height="200" style="max-height: 250px"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">🏆 Serviços Mais Vendidos</span>
+          </div>
+          <div class="card-body">
+            <canvas id="servicesChart" height="200" style="max-height: 250px"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- GRID PRINCIPAL -->
+      <div class="dashboard-grid">
+
+        <!-- Agenda do Dia -->
+        <div class="card col-2">
+          <div class="card-header">
+            <span class="card-title">📅 Agenda de Hoje</span>
+            <a href="pages/agendamentos.html" class="btn btn-secondary btn-sm">Ver todos</a>
+          </div>
+          <div class="card-body" style="padding:0">
+            <ul class="agenda-list" id="agendaList" style="padding: 0 20px"></ul>
+          </div>
+        </div>
+
+        <!-- Serviços Mais Realizados -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">🏆 Top Serviços</span>
+          </div>
+          <div class="card-body" style="padding: 0 20px">
+            <ul class="top-services-list" id="topServicesList"></ul>
+          </div>
+        </div>
+
+        <!-- Contador do Dia -->
+        <div class="card day-progress-card" style="grid-column: span 3; display:flex; align-items:center; gap:24px; padding:24px">
+          <div style="flex:1">
+            <div style="font-size:0.8rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">Progresso do Dia</div>
+            <div style="font-size:1.3rem;font-weight:700;color:var(--text-primary)" id="progressLabel">0 de 0 atendimentos</div>
+            <div style="margin-top:12px">
+              <div class="progress-bar" style="height:10px">
+                <div class="progress-fill" id="dayProgressBar" style="width:0%"></div>
+              </div>
+            </div>
+            <div style="font-size:0.8rem;color:var(--text-muted);margin-top:6px" id="progressSub">Nenhum agendamento para hoje</div>
+          </div>
+          <div style="text-align:center;flex-shrink:0">
+            <div style="font-size:3rem;font-weight:800;color:var(--primary);font-variant-numeric:tabular-nums" id="dayCounter">0</div>
+            <div style="font-size:0.78rem;font-weight:600;color:var(--text-muted);margin-top:4px">ATEND. HOJE</div>
+          </div>
+          <div style="text-align:center;flex-shrink:0">
+            <div style="font-size:3rem;font-weight:800;color:var(--green);font-variant-numeric:tabular-nums" id="dayRevenue">R$0</div>
+            <div style="font-size:0.78rem;font-weight:600;color:var(--text-muted);margin-top:4px">RECEITA HOJE</div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- MODAL DE CONFIRMAÇÃO (global) -->
+<div class="modal-overlay" id="confirmOverlay">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <span class="modal-title">⚠️ Confirmar Ação</span>
+      <button class="modal-close" onclick="Modal.close('confirmOverlay')">×</button>
+    </div>
+    <div class="modal-body">
+      <p id="confirmMsg" style="color:var(--text-secondary);font-size:0.9rem">Tem certeza que deseja realizar esta ação?</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="Modal.close('confirmOverlay')">Cancelar</button>
+      <button class="btn btn-danger" id="confirmYes">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<div class="notifications-wrapper" id="notificationsWrapper"></div>
+<script>
+  // ────────────────────────────────────
+  // DASHBOARD — Renderização
+  // ────────────────────────────────────
+  function renderDashboard() {
+    const stats = DB.getDashboardStats();
+    const config = DB.getConfig();
+
+    // Stat cards
+    document.getElementById('statClientes').textContent = stats.totalClientes;
+    document.getElementById('statAgendamentos').textContent = stats.agendamentosHoje;
+    document.getElementById('statConcluidos').textContent = stats.concluidosHoje;
+    document.getElementById('statReceita').textContent = Format.currency(stats.receitaMes);
+
+    // Topbar avatar
+    document.getElementById('topbarAvatar').textContent = (config.owner || 'A')[0].toUpperCase();
+
+    // Data atual
+    const hoje = new Date();
+    const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('dashboardDate').textContent = hoje.toLocaleDateString('pt-BR', opts);
+
+    // Saudação
+    const hr = hoje.getHours();
+    const greet = hr < 12 ? 'Bom dia!' : hr < 18 ? 'Boa tarde!' : 'Boa noite!';
+    document.querySelector('.page-header-left h1').textContent = `${greet} ${config.emoji || '👋'}`;
+
+    // AGENDA DO DIA
+    const agendaList = document.getElementById('agendaList');
+    agendaList.innerHTML = '';
+    const ags = stats.agendamentosHojeList;
+
+    if (ags.length === 0) {
+      agendaList.innerHTML = `<div class="empty-state" style="padding:30px 0">
+        <div class="empty-state-icon">📅</div>
+        <h3>Sem agendamentos hoje</h3>
+        <p>Clique em "Novo Agendamento" para começar</p>
+      </div>`;
+    } else {
+      ags.forEach(ag => {
+        const cliente = DB.getClienteById(ag.clienteId);
+        const servico = DB.getServicoPorId(ag.servicoId);
+        const color = avatarColor(cliente?.nome || '');
+        const statusBadge = ag.status === 'concluido'
+          ? '<span class="badge badge-green">Concluído</span>'
+          : ag.status === 'cancelado'
+          ? '<span class="badge badge-red">Cancelado</span>'
+          : '<span class="badge badge-blue">Agendado</span>';
+
+        const li = document.createElement('li');
+        li.className = 'agenda-item';
+        li.innerHTML = `
+          <span class="agenda-time">${ag.hora || '--:--'}</span>
+          <div style="width:28px;height:28px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0">
+            ${Format.initials(cliente?.nome || '?')}
+          </div>
+          <div class="agenda-service" style="flex:1">
+            <div class="agenda-service-name">${servico?.nome || 'Serviço'}</div>
+            <div class="agenda-service-client">${cliente?.nome || 'Cliente'}</div>
+          </div>
+          ${statusBadge}
+          <span style="font-size:0.85rem;font-weight:700;color:var(--text-secondary);margin-left:8px">${Format.currency(ag.valor)}</span>
+        `;
+        agendaList.appendChild(li);
+      });
+    }
+
+    // TOP SERVIÇOS
+    const topList = document.getElementById('topServicesList');
+    topList.innerHTML = '';
+
+    if (stats.topServicos.length === 0) {
+      topList.innerHTML = `<div style="padding:20px 0;text-align:center;color:var(--text-muted);font-size:0.85rem">Nenhum serviço realizado ainda</div>`;
+    } else {
+      const maxCount = stats.topServicos[0]?.count || 1;
+      stats.topServicos.forEach((item, idx) => {
+        const pct = Math.round((item.count / maxCount) * 100);
+        const li = document.createElement('li');
+        li.className = 'top-service-item';
+        li.style.flexDirection = 'column';
+        li.style.alignItems = 'flex-start';
+        li.style.gap = '6px';
+        li.innerHTML = `
+          <div style="display:flex;align-items:center;gap:10px;width:100%">
+            <div class="top-service-rank">${idx + 1}</div>
+            <span class="top-service-name">${item.servico.nome}</span>
+            <span class="top-service-count">${item.count}x</span>
+          </div>
+          <div class="progress-bar" style="width:100%">
+            <div class="progress-fill" style="width:${pct}%"></div>
+          </div>
+        `;
+        topList.appendChild(li);
+      });
+    }
+
+    // PROGRESSO DO DIA
+    const total = ags.length;
+    const done = stats.concluidosHoje;
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+    document.getElementById('progressLabel').textContent = `${done} de ${total} atendimentos concluídos`;
+    document.getElementById('dayProgressBar').style.width = pct + '%';
+    document.getElementById('dayCounter').textContent = done;
+    document.getElementById('progressSub').textContent =
+      total === 0 ? 'Nenhum agendamento para hoje' :
+      pct === 100 ? '🎉 Todos os atendimentos concluídos!' :
+      `${pct}% concluído — ${total - done} restante${total - done !== 1 ? 's' : ''}`;
+
+    // Receita do dia (somente concluídos)
+    const receitaHoje = ags
+      .filter(a => a.status === 'concluido')
+      .reduce((acc, a) => acc + (parseFloat(a.valor) || 0), 0);
+    document.getElementById('dayRevenue').textContent = Format.currency(receitaHoje);
+
+    // Badge de notificação se há agendamentos
+    const notifDot = document.getElementById('notifDot');
+    const pendentes = ags.filter(a => a.status === 'agendado').length;
+    if (notifDot) notifDot.style.display = pendentes > 0 ? '' : 'none';
+  }
+
+  // Busca global (redireciona para clientes)
+  document.getElementById('topbarSearchInput')?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && e.target.value.trim()) {
+      window.location.href = `pages/clientes.html?search=${encodeURIComponent(e.target.value.trim())}`;
+    }
+  });
+
+  // Render ao carregar
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      RemoteDB.initFromConfig();
+      if (RemoteDB.configured) await RemoteDB.pullAndImportAll();
+    } catch (e) {}
+    renderDashboard();
+    // Carregar gráficos
+    if (typeof initCharts === 'function') {
+      setTimeout(initCharts, 500);
+    }
+  });
+</script>
+
+<script src="js/db.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/remote-db.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/mobile.js"></script>
+<script src="js/charts.js"></script>
+</body>
+</html>

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Funcionários — SGCM</title>
+  <link rel="stylesheet" href="../css/main.css" />
+</head>
+<body>
+
+<div class="app-layout">
+  <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon" id="sidebarEmoji">✂️</div>
+      <div>
+        <div class="sidebar-logo-text" id="sidebarBusinessName">Carregando...</div>
+        <div class="sidebar-logo-sub">Painel Administrativo</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Menu Principal</div>
+      <a href="../index.html" class="nav-item"><span class="nav-item-icon">📊</span> Dashboard</a>
+      <a href="clientes.html" class="nav-item"><span class="nav-item-icon">👥</span> Clientes</a>
+      <a href="servicos.html" class="nav-item"><span class="nav-item-icon">✨</span> Serviços</a>
+      <a href="agendamentos.html" class="nav-item"><span class="nav-item-icon">📅</span> Agendamentos</a>
+      <div class="nav-section-label" style="margin-top:8px">Relatórios</div>
+      <a href="historico.html" class="nav-item"><span class="nav-item-icon">📋</span> Histórico</a>
+      <a href="comissoes.html" class="nav-item"><span class="nav-item-icon">💰</span> Comissões</a>
+      <div class="nav-section-label" style="margin-top:8px">Sistema</div>
+      <a href="funcionarios.html" class="nav-item active admin-only"><span class="nav-item-icon">👥</span> Funcionários</a>
+      <a href="config.html" class="nav-item admin-only"><span class="nav-item-icon">⚙️</span> Configurações</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar" id="ownerAvatar">A</div>
+        <div class="user-info">
+          <div class="user-info-name" id="ownerName">Carregando...</div>
+          <div class="user-info-role" id="userRole">—</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <button class="menu-toggle" id="menuToggle" aria-label="Abrir menu">
+        <div class="hamburger"><span></span><span></span><span></span></div>
+      </button>
+      <div class="topbar-title">👥 Funcionários</div>
+      <div class="topbar-actions">
+        <button class="topbar-btn" data-tooltip="Notificações" aria-label="Notificações">
+          🔔
+        </button>
+        <button class="dark-mode-toggle" id="darkModeToggleTopbar">🌙</button>
+        <button class="topbar-btn" onclick="Auth.logout()" data-tooltip="Sair">🚪</button>
+        <div class="topbar-avatar" id="topbarAvatar" aria-label="Usuário">A</div>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1>👥 Funcionários</h1>
+          <p id="funcionariosCount">Carregando...</p>
+          <p style="color:var(--text-secondary);font-size:0.9rem;max-width:720px">
+            Use esta tela para cadastrar atendentes e administradores, ajustar comissão, ativar ou desativar acessos e manter a equipe organizada.
+          </p>
+        </div>
+        <button class="btn btn-primary" onclick="openUsuarioModal()">
+          ➕ Novo Funcionário
+        </button>
+      </div>
+
+      <div class="card" style="overflow:hidden">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Funcionário</th>
+                <th>Email</th>
+                <th>Cargo</th>
+                <th>Comissão</th>
+                <th>Status</th>
+                <th style="text-align:right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="usuariosTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- MODAL USUÁRIO -->
+<div class="modal-overlay" id="usuarioModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="usuarioModalTitle">➕ Novo Funcionário</span>
+      <button class="modal-close" onclick="Modal.close('usuarioModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="usuarioId" />
+      <div class="form-group">
+        <label class="form-label">Nome Completo *</label>
+        <input type="text" id="usuarioNome" class="form-control" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email *</label>
+        <input type="email" id="usuarioEmail" class="form-control" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Senha</label>
+          <input type="password" id="usuarioSenha" class="form-control" placeholder="••••••" />
+          <small style="color:var(--text-muted);font-size:0.7rem">Deixe em branco para manter a mesma</small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cargo</label>
+          <select id="usuarioRole" class="form-control">
+            <option value="atendente">Atendente</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Comissão (%)</label>
+          <input type="number" id="usuarioComissao" class="form-control" value="0" step="0.5" min="0" max="100" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select id="usuarioAtivo" class="form-control">
+            <option value="true">Ativo</option>
+            <option value="false">Inativo</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="Modal.close('usuarioModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarUsuario()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirmOverlay">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-header">
+      <span class="modal-title">⚠️ Confirmar</span>
+      <button class="modal-close" onclick="Modal.close('confirmOverlay')">×</button>
+    </div>
+    <div class="modal-body">
+      <p id="confirmMsg">Confirmar ação?</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="Modal.close('confirmOverlay')">Cancelar</button>
+      <button class="btn btn-danger" id="confirmYes">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="notifications-wrapper" id="notificationsWrapper"></div>
+
+<script>
+  function renderUsuarios() {
+    const tbody = document.getElementById('usuariosTableBody');
+    const usuarios = Auth.getUsuarios();
+    
+    document.getElementById('funcionariosCount').textContent = 
+      `${usuarios.length} funcionário${usuarios.length !== 1 ? 's' : ''}`;
+    
+    tbody.innerHTML = '';
+    
+    usuarios.forEach(u => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><strong>${escapeHTML(u.nome)}</strong></td>
+        <td>${escapeHTML(u.email)}</td>
+        <td><span class="badge ${u.role === 'admin' ? 'badge-purple' : 'badge-blue'}">${u.role === 'admin' ? 'Admin' : 'Atendente'}</span></td>
+        <td>${escapeHTML(String(u.comissao || 0))}%</td>
+        <td>${u.ativo ? '<span class="badge badge-green">Ativo</span>' : '<span class="badge badge-red">Inativo</span>'}</td>
+        <td style="text-align:right">
+          <div class="table-actions" style="justify-content:flex-end">
+            <button class="btn btn-secondary btn-sm btn-icon" onclick="editarUsuario('${escapeHTML(u.id)}')">✏️</button>
+            <button class="btn btn-danger btn-sm btn-icon" onclick="excluirUsuario('${escapeHTML(u.id)}')">🗑️</button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+  
+  function openUsuarioModal() {
+    document.getElementById('usuarioId').value = '';
+    document.getElementById('usuarioNome').value = '';
+    document.getElementById('usuarioEmail').value = '';
+    document.getElementById('usuarioSenha').value = '';
+    document.getElementById('usuarioRole').value = 'atendente';
+    document.getElementById('usuarioComissao').value = '0';
+    document.getElementById('usuarioAtivo').value = 'true';
+    document.getElementById('usuarioModalTitle').textContent = '➕ Novo Funcionário';
+    Modal.open('usuarioModal');
+  }
+  
+  function editarUsuario(id) {
+    const user = Auth.getUsuarios().find(u => u.id === id);
+    if (!user) return;
+    
+    document.getElementById('usuarioId').value = user.id;
+    document.getElementById('usuarioNome').value = user.nome;
+    document.getElementById('usuarioEmail').value = user.email;
+    document.getElementById('usuarioSenha').value = '';
+    document.getElementById('usuarioRole').value = user.role;
+    document.getElementById('usuarioComissao').value = user.comissao || 0;
+    document.getElementById('usuarioAtivo').value = user.ativo ? 'true' : 'false';
+    document.getElementById('usuarioModalTitle').textContent = '✏️ Editar Funcionário';
+    Modal.open('usuarioModal');
+  }
+  
+  function salvarUsuario() {
+    const nome = document.getElementById('usuarioNome').value.trim();
+    const email = document.getElementById('usuarioEmail').value.trim();
+    const senha = document.getElementById('usuarioSenha').value;
+    const id = document.getElementById('usuarioId').value;
+    
+    if (!nome) { Notify.error('Erro', 'Informe o nome do funcionário.'); return; }
+    if (!email) { Notify.error('Erro', 'Informe o email.'); return; }
+    
+    const usuarios = Auth.getUsuarios();
+    const emailExiste = usuarios.some(u => u.email === email && u.id !== id);
+    if (emailExiste) { Notify.error('Erro', 'Este email já está em uso.'); return; }
+    
+    let usuarioData = {
+      id: id || null,
+      nome,
+      email,
+      role: document.getElementById('usuarioRole').value,
+      comissao: parseFloat(document.getElementById('usuarioComissao').value),
+      ativo: document.getElementById('usuarioAtivo').value === 'true'
+    };
+    
+    if (senha) usuarioData.senha = senha;
+    
+    (async () => {
+      try {
+        if (RemoteDB && RemoteDB.configured) {
+          const saved = await RemoteDB.saveUsuario(usuarioData);
+          if (Auth.importUsuarios) {
+            // refresh local
+            const users = await RemoteDB.getUsuarios();
+            Auth.importUsuarios(users || []);
+          }
+        } else {
+          Auth.saveUsuario(usuarioData);
+        }
+        Modal.close('usuarioModal');
+        renderUsuarios();
+        Notify.success('Salvo!', `Funcionário ${nome} foi ${id ? 'atualizado' : 'cadastrado'}.`);
+      } catch (e) {
+        Auth.saveUsuario(usuarioData);
+        Modal.close('usuarioModal');
+        renderUsuarios();
+        Notify.warning('Operação parcial', 'Funcionário salvo localmente. Houveram problemas ao salvar remotamente.');
+      }
+    })();
+  }
+  
+  function excluirUsuario(id) {
+    const nome = Auth.getUsuarios().find(u => u.id === id)?.nome || '';
+    confirmDelete(`Excluir "${escapeHTML(nome)}"?`, () => {
+      (async () => {
+        try {
+          if (RemoteDB && RemoteDB.configured) await RemoteDB.deleteUsuario(id);
+        } catch (e) {}
+        Auth.deleteUsuario(id);
+        renderUsuarios();
+        Notify.success('Removido', 'Funcionário excluído.');
+      })();
+    });
+  }
+  
+  document.addEventListener('DOMContentLoaded', async () => {
+    if (!Auth.isAdmin()) {
+      window.location.href = '../index.html';
+      return;
+    }
+    try {
+      RemoteDB.initFromConfig();
+      if (RemoteDB.configured) await RemoteDB.pullAndImportAll();
+    } catch (e) {}
+    renderUsuarios();
+    const topbarAvatar = document.getElementById('topbarAvatar');
+    if (topbarAvatar) topbarAvatar.textContent = (Auth.getCurrentUser()?.nome || 'A')[0];
+    document.getElementById('ownerName').textContent = Auth.getCurrentUser()?.nome || 'Admin';
+    document.getElementById('userRole').textContent = 'Administrador';
+  });
+</script>
+
+<script src="../js/db.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/remote-db.js"></script>
+<script src="../js/ui.js"></script>
+<script src="../js/mobile.js"></script>
+</body>
+</html>
