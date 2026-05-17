@@ -71,7 +71,15 @@ const DB = {
   },
 
   saveConfig(config) {
+    // garante timestamp de atualização
+    config.updatedAt = new Date().toISOString();
     this.set(this.KEYS.CONFIG, config);
+    // Propaga para RemoteDB em background, se configurado
+    try {
+      if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
+        RemoteDB.saveConfig(config).catch(() => {});
+      }
+    } catch (e) {}
   },
 
   // ──────────────────────────────────────────
@@ -96,8 +104,16 @@ const DB = {
       cliente.createdAt = new Date().toISOString();
       clientes.unshift(cliente);
     }
+    // marca atualização
+    cliente.updatedAt = new Date().toISOString();
     this.set(this.KEYS.CLIENTES, clientes);
     this._cache.CLIENTES = clientes;
+    // Propaga para RemoteDB em background, se disponível
+    try {
+      if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
+        RemoteDB.saveCliente(cliente).catch(() => {});
+      }
+    } catch (e) {}
     return cliente;
   },
 
@@ -105,6 +121,11 @@ const DB = {
     const clientes = this.getClientes().filter(c => c.id !== id);
     this.set(this.KEYS.CLIENTES, clientes);
     this._cache.CLIENTES = clientes;
+    try {
+      if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
+        RemoteDB.deleteCliente(id).catch(() => {});
+      }
+    } catch (e) {}
   },
 
   getClienteById(id) {
@@ -131,8 +152,14 @@ const DB = {
       servico.createdAt = new Date().toISOString();
       servicos.unshift(servico);
     }
+    servico.updatedAt = new Date().toISOString();
     this.set(this.KEYS.SERVICOS, servicos);
     this._cache.SERVICOS = servicos;
+    try {
+      if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
+        RemoteDB.saveServico(servico).catch(() => {});
+      }
+    } catch (e) {}
     return servico;
   },
 
@@ -140,6 +167,11 @@ const DB = {
     const servicos = this.getServicos().filter(s => s.id !== id);
     this.set(this.KEYS.SERVICOS, servicos);
     this._cache.SERVICOS = servicos;
+    try {
+      if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
+        RemoteDB.deleteServico(id).catch(() => {});
+      }
+    } catch (e) {}
   },
 
   getServicoPorId(id) {
@@ -167,8 +199,14 @@ const DB = {
       ag.status = ag.status || 'agendado';
       ags.unshift(ag);
     }
+    ag.updatedAt = new Date().toISOString();
     this.set(this.KEYS.AGENDAMENTOS, ags);
     this._cache.AGENDAMENTOS = ags;
+    try {
+      if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
+        RemoteDB.saveAgendamento(ag).catch(() => {});
+      }
+    } catch (e) {}
     return ag;
   },
 
@@ -176,6 +214,11 @@ const DB = {
     const ags = this.getAgendamentos().filter(a => a.id !== id);
     this.set(this.KEYS.AGENDAMENTOS, ags);
     this._cache.AGENDAMENTOS = ags;
+    try {
+      if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
+        RemoteDB.deleteAgendamento(id).catch(() => {});
+      }
+    } catch (e) {}
   },
 
   getAgendamentosHoje() {
@@ -219,6 +262,11 @@ const DB = {
     hist.unshift(entry);
     this.set(this.KEYS.HISTORICO, hist);
     this._cache.HISTORICO = hist;
+    try {
+      if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
+        RemoteDB.addHistorico(entry).catch(() => {});
+      }
+    } catch (e) {}
     return entry;
   },
 
