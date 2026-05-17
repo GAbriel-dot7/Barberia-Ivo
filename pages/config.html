@@ -196,11 +196,11 @@
       <div class="config-section">
         <div class="config-section-header">🔁 Sincronização Remota (Gratuita)</div>
         <div class="config-section-body">
-          <p style="margin-top:0;font-size:0.9rem;color:var(--text-muted)">Conecte um projeto Supabase e use o Storage para guardar backups JSON. Crie um projeto em <a href="https://supabase.com" target="_blank">supabase.com</a> e um bucket público.</p>
+          <p style="margin-top:0;font-size:0.9rem;color:var(--text-muted)">Conecte um projeto Supabase e use o Storage para guardar backups JSON. Crie um projeto em <a href="https://supabase.com" target="_blank">supabase.com</a> e um bucket com policies liberadas para os arquivos de backup.</p>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
-            <input id="supabaseUrl" placeholder="https://ggomwspyrhnvlnjlwnzj.supabase.co" class="form-control" style="flex:1" />
-            <input id="supabaseAnonKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdnb213c3B5cmhudmxuamx3bnpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NDMxMzEsImV4cCI6MjA5NDUxOTEzMX0.Qvw0X0ympxBKG6sI3C0zPfIvEYBXY8J2RfQ-iBqtqkA" class="form-control" style="flex:1" />
-            <input id="supabaseBucket" placeholder="ivo" class="form-control" style="width:220px" />
+            <input id="supabaseUrl" placeholder="https://sua-conta.supabase.co" class="form-control" style="flex:1" autocomplete="off" />
+            <input id="supabaseAnonKey" placeholder="Cole aqui a sua ANON KEY" class="form-control" style="flex:1" autocomplete="off" />
+            <input id="supabaseBucket" placeholder="nome-do-bucket" class="form-control" style="width:220px" autocomplete="off" />
           </div>
           <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn btn-secondary" onclick="saveSupabaseConfig()">Salvar Config</button>

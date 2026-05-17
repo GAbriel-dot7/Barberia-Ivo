@@ -8,6 +8,160 @@ const RemoteDB = {
   url: '',
   anonKey: '',
 
+  _toSupabase(table, item = {}) {
+    if (!item) return item;
+    switch (table) {
+      case 'clientes':
+        return {
+          id: item.id,
+          nome: item.nome,
+          telefone: item.telefone || '',
+          email: item.email || '',
+          obs: item.obs || '',
+          deleted_at: item.deletedAt || item.deleted_at || null,
+        };
+      case 'servicos':
+        return {
+          id: item.id,
+          nome: item.nome,
+          preco: item.preco ?? 0,
+          duracao: item.duracao ?? 0,
+          descricao: item.descricao || '',
+          ativo: item.ativo ?? true,
+          deleted_at: item.deletedAt || item.deleted_at || null,
+        };
+      case 'agendamentos':
+        return {
+          id: item.id,
+          cliente_id: item.clienteId || item.cliente_id,
+          servico_id: item.servicoId || item.servico_id,
+          funcionario_id: item.funcionarioId || item.funcionario_id || null,
+          data: item.data,
+          hora: item.hora,
+          valor: item.valor ?? 0,
+          status: item.status || 'agendado',
+          observacao: item.observacao || '',
+          deleted_at: item.deletedAt || item.deleted_at || null,
+        };
+      case 'historico':
+        return {
+          id: item.id,
+          cliente_id: item.clienteId || item.cliente_id || null,
+          servico_id: item.servicoId || item.servico_id || null,
+          funcionario_id: item.funcionarioId || item.funcionario_id || null,
+          agendamento_id: item.agendamentoId || item.agendamento_id || null,
+          valor: item.valor ?? 0,
+          data: item.data,
+          hora: item.hora,
+          observacao: item.observacao || '',
+          registrado_em: item.registradoEm || item.registrado_em || item.created_at || null,
+        };
+      case 'usuarios':
+        return {
+          id: item.id,
+          auth_user_id: item.authUserId || item.auth_user_id || null,
+          nome: item.nome,
+          email: item.email,
+          role: item.role || 'atendente',
+          comissao: item.comissao ?? 0,
+          ativo: item.ativo ?? true,
+        };
+      case 'configuracoes':
+        return {
+          id: item.id,
+          nome: item.nome,
+          slogan: item.slogan,
+          cor: item.cor,
+          owner: item.owner,
+          emoji: item.emoji,
+          modulos: item.modulos || { duracao: true, historico: true, agendamentos: true },
+        };
+      default:
+        return item;
+    }
+  },
+
+  _fromSupabase(table, row = {}) {
+    if (!row) return row;
+    switch (table) {
+      case 'clientes':
+        return {
+          id: row.id,
+          nome: row.nome,
+          telefone: row.telefone || '',
+          email: row.email || '',
+          obs: row.obs || '',
+          deletedAt: row.deleted_at || null,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        };
+      case 'servicos':
+        return {
+          id: row.id,
+          nome: row.nome,
+          preco: row.preco,
+          duracao: row.duracao,
+          descricao: row.descricao || '',
+          ativo: row.ativo ?? true,
+          deletedAt: row.deleted_at || null,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        };
+      case 'agendamentos':
+        return {
+          id: row.id,
+          clienteId: row.cliente_id,
+          servicoId: row.servico_id,
+          funcionarioId: row.funcionario_id || '',
+          data: row.data,
+          hora: row.hora,
+          valor: row.valor,
+          status: row.status,
+          observacao: row.observacao || '',
+          deletedAt: row.deleted_at || null,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        };
+      case 'historico':
+        return {
+          id: row.id,
+          clienteId: row.cliente_id || '',
+          servicoId: row.servico_id || '',
+          funcionarioId: row.funcionario_id || '',
+          agendamentoId: row.agendamento_id || '',
+          valor: row.valor,
+          data: row.data,
+          hora: row.hora,
+          observacao: row.observacao || '',
+          registradoEm: row.registrado_em || row.created_at,
+        };
+      case 'usuarios':
+        return {
+          id: row.id,
+          authUserId: row.auth_user_id || null,
+          nome: row.nome,
+          email: row.email,
+          role: row.role,
+          comissao: row.comissao,
+          ativo: row.ativo,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        };
+      case 'configuracoes':
+        return {
+          id: row.id,
+          nome: row.nome,
+          slogan: row.slogan,
+          cor: row.cor,
+          owner: row.owner,
+          emoji: row.emoji,
+          modulos: row.modulos || {},
+        };
+      default:
+        return row;
+    }
+  },
+
   initFromConfig() {
     try {
       const cfg = DB.getConfig() || {};
@@ -45,24 +199,30 @@ const RemoteDB = {
     try { return await res.json(); } catch { return null; }
   },
 
+  async _getSingle(table) {
+    const rows = await this._api(table, 'GET', null, 'select=*');
+    return (Array.isArray(rows) && rows.length) ? this._fromSupabase(table, rows[0]) : null;
+  },
+
   // CONFIG
   async getConfig() {
     if (!this.initFromConfig()) return DB.getConfig();
     try {
-      const rows = await this._api('configuracoes', 'GET', null, 'select=*');
-      return (rows && rows.length) ? rows[0] : DB.getConfig();
+      const row = await this._getSingle('configuracoes');
+      return row ? this._fromSupabase('configuracoes', row) : DB.getConfig();
     } catch (e) { return DB.getConfig(); }
   },
 
   async saveConfig(cfg) {
     if (!this.initFromConfig()) return DB.saveConfig(cfg);
     try {
-      // Upsert by inserting and letting unique constraint handle it would require PK; keep simple: try update all rows via RPC not available here.
-      // For now, update by id if present, otherwise insert.
-      if (cfg.id) {
-        await this._api('configuracoes', 'PATCH', cfg, `id=eq.${encodeURIComponent(cfg.id)}`);
+      const payload = this._toSupabase('configuracoes', cfg);
+      const existing = await this._api('configuracoes', 'GET', null, 'select=id');
+      if (Array.isArray(existing) && existing.length) {
+        const targetId = cfg.id || existing[0].id;
+        await this._api('configuracoes', 'PATCH', payload, `id=eq.${encodeURIComponent(targetId)}`);
       } else {
-        await this._api('configuracoes', 'POST', cfg, '');
+        await this._api('configuracoes', 'POST', payload, '');
       }
       return true;
     } catch (e) {
@@ -74,19 +234,21 @@ const RemoteDB = {
   async _list(table) {
     if (!this.initFromConfig()) return DB['get' + table.charAt(0).toUpperCase() + table.slice(1)] ? DB['get' + table.charAt(0).toUpperCase() + table.slice(1)]() : [];
     try {
-      return await this._api(table, 'GET', null, 'select=*');
+      const rows = await this._api(table, 'GET', null, 'select=*');
+      return Array.isArray(rows) ? rows.map(row => this._fromSupabase(table, row)) : [];
     } catch (e) { return DB['get' + table.charAt(0).toUpperCase() + table.slice(1)] ? DB['get' + table.charAt(0).toUpperCase() + table.slice(1)]() : []; }
   },
 
   async _save(table, item) {
     if (!this.initFromConfig()) return DB['save' + table.slice(0, -1).charAt(0).toUpperCase() + table.slice(1, -1)] ? DB['save' + table.slice(0, -1).charAt(0).toUpperCase() + table.slice(1, -1)](item) : item;
     try {
+      const payload = this._toSupabase(table, item);
       if (item.id) {
-        const res = await this._api(table, 'PATCH', item, `id=eq.${encodeURIComponent(item.id)}`);
-        return Array.isArray(res) && res[0] ? res[0] : item;
+        const res = await this._api(table, 'PATCH', payload, `id=eq.${encodeURIComponent(item.id)}`);
+        return Array.isArray(res) && res[0] ? this._fromSupabase(table, res[0]) : item;
       } else {
-        const res = await this._api(table, 'POST', item, '');
-        return Array.isArray(res) && res[0] ? res[0] : item;
+        const res = await this._api(table, 'POST', payload, '');
+        return Array.isArray(res) && res[0] ? this._fromSupabase(table, res[0]) : item;
       }
     } catch (e) { return DB['save' + table.slice(0, -1).charAt(0).toUpperCase() + table.slice(1, -1)] ? DB['save' + table.slice(0, -1).charAt(0).toUpperCase() + table.slice(1, -1)](item) : item; }
   },
@@ -121,18 +283,22 @@ const RemoteDB = {
   // USUARIOS - basic import/export helper (local fallback exists)
   async getUsuarios() {
     if (!this.initFromConfig()) return Auth.getUsuarios();
-    try { return await this._api('usuarios', 'GET', null, 'select=*'); } catch (e) { return Auth.getUsuarios(); }
+    try {
+      const rows = await this._api('usuarios', 'GET', null, 'select=*');
+      return Array.isArray(rows) ? rows.map(row => this._fromSupabase('usuarios', row)) : [];
+    } catch (e) { return Auth.getUsuarios(); }
   },
 
   async saveUsuario(u) {
     if (!this.initFromConfig()) return Auth.saveUsuario ? Auth.saveUsuario(u) : u;
     try {
+      const payload = this._toSupabase('usuarios', u);
       if (u.id) {
-        const res = await this._api('usuarios', 'PATCH', u, `id=eq.${encodeURIComponent(u.id)}`);
-        return Array.isArray(res) && res[0] ? res[0] : u;
+        const res = await this._api('usuarios', 'PATCH', payload, `id=eq.${encodeURIComponent(u.id)}`);
+        return Array.isArray(res) && res[0] ? this._fromSupabase('usuarios', res[0]) : u;
       } else {
-        const res = await this._api('usuarios', 'POST', u, '');
-        return Array.isArray(res) && res[0] ? res[0] : u;
+        const res = await this._api('usuarios', 'POST', payload, '');
+        return Array.isArray(res) && res[0] ? this._fromSupabase('usuarios', res[0]) : u;
       }
     } catch (e) { return Auth.saveUsuario ? Auth.saveUsuario(u) : u; }
   },

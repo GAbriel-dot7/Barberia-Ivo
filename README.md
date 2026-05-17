@@ -308,8 +308,8 @@ Passos mínimos para habilitar a sincronização remota usando Supabase Storage 
 
 3. Criar um bucket de Storage
     - Vá em Storage → Buckets → New bucket.
-    - Nome sugerido: `sgcm-backups` ou `public`.
-    - Ative `Public` (necessário para operações simples com a ANON KEY do cliente).
+    - Nome sugerido: qualquer nome fácil de identificar para a instalação.
+    - O importante é que as policies do Storage permitam arquivos com o padrão `sgcm-backup-*.json`.
 
 4. Copiar Project URL e ANON KEY
     - Vá em Settings → API → Project URL e anon (public) key.
@@ -326,6 +326,7 @@ Passos mínimos para habilitar a sincronização remota usando Supabase Storage 
 
 7. Troubleshooting rápido
     - Erro 401/403 ao enviar: verifique a `ANON KEY` e se o bucket está público.
+    - Se o bucket estiver privado, confirme se as policies de `storage.objects` foram aplicadas corretamente no SQL Editor.
     - Resposta vazia ao baixar: confirme o nome do arquivo (o sistema usa `sgcm-backup-latest.json`).
 
 8. Observações de segurança e modelo de venda
