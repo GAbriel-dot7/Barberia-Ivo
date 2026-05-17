@@ -9,14 +9,22 @@ function loadSupabaseInputsFromConfig() {
   document.getElementById('supabaseBucket').value = sup.bucket || '';
 }
 
+function _normalizeUrl(raw) {
+  if (!raw) return '';
+  const trimmed = raw.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed.replace(/\/$/, '');
+  return 'https://' + trimmed.replace(/\/$/, '');
+}
+
 function saveSupabaseConfig() {
-  const url = document.getElementById('supabaseUrl').value.trim();
+  let url = document.getElementById('supabaseUrl').value.trim();
   const anonKey = document.getElementById('supabaseAnonKey').value.trim();
   const bucket = document.getElementById('supabaseBucket').value.trim();
   if (!url || !anonKey || !bucket) {
     Notify.error('Configuração incompleta', 'Preencha URL, ANON KEY e bucket.');
     return;
   }
+  url = _normalizeUrl(url);
   const cfg = DB.getConfig();
   cfg.supabase = { url, anonKey, bucket };
   DB.saveConfig(cfg);
@@ -39,7 +47,7 @@ function getBackupPayload() {
 }
 
 async function pushBackupToSupabase() {
-  const url = document.getElementById('supabaseUrl').value.trim();
+  const url = _normalizeUrl(document.getElementById('supabaseUrl').value.trim());
   const anonKey = document.getElementById('supabaseAnonKey').value.trim();
   const bucket = document.getElementById('supabaseBucket').value.trim();
   if (!url || !anonKey || !bucket) {
@@ -73,7 +81,7 @@ async function pushBackupToSupabase() {
 }
 
 async function pullBackupFromSupabase() {
-  const url = document.getElementById('supabaseUrl').value.trim();
+  const url = _normalizeUrl(document.getElementById('supabaseUrl').value.trim());
   const anonKey = document.getElementById('supabaseAnonKey').value.trim();
   const bucket = document.getElementById('supabaseBucket').value.trim();
   if (!url || !anonKey || !bucket) {
@@ -107,14 +115,15 @@ async function pullBackupFromSupabase() {
 }
 
 async function testSupabaseConnection() {
-  const url = document.getElementById('supabaseUrl').value.trim();
+  const url = _normalizeUrl(document.getElementById('supabaseUrl').value.trim());
   const anonKey = document.getElementById('supabaseAnonKey').value.trim();
   const bucket = document.getElementById('supabaseBucket').value.trim();
   if (!url || !anonKey || !bucket) {
     Notify.error('Configuração incompleta', 'Preencha URL, ANON KEY e bucket.');
     return;
   }
-  const endpoint = `${url.replace(/\/$/, '')}/storage/v1/object/${bucket}`;
+  // Use list endpoint to verify bucket access
+  const endpoint = `${url}/storage/v1/object/list/${bucket}`;
   try {
     const res = await fetch(endpoint, { method: 'GET', headers: { 'Authorization': 'Bearer ' + anonKey } });
     if (res.ok || res.status === 200 || res.status === 204) {
