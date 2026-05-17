@@ -365,26 +365,25 @@ const DB = {
   // SEED (Preparar para Barbearia Ivo & Lucas)
   // ──────────────────────────────────────────
   seedDemoData() {
-    // Limpa quaisquer dados de exemplo existentes e prepara o sistema
-    // para uso real pela Barbearia Ivo & Lucas.
-    this.set(this.KEYS.CLIENTES, []);
-    this._cache.CLIENTES = [];
-    this.set(this.KEYS.SERVICOS, []);
-    this._cache.SERVICOS = [];
-    this.set(this.KEYS.AGENDAMENTOS, []);
-    this._cache.AGENDAMENTOS = [];
-    this.set(this.KEYS.HISTORICO, []);
-    this._cache.HISTORICO = [];
+    // Apenas inicializa se não houver dados previos (evita apagar dados do usuário)
+    const hasClientes = Array.isArray(this.get(this.KEYS.CLIENTES)) && this.get(this.KEYS.CLIENTES).length > 0;
+    const hasServicos = Array.isArray(this.get(this.KEYS.SERVICOS)) && this.get(this.KEYS.SERVICOS).length > 0;
+    const hasAg = Array.isArray(this.get(this.KEYS.AGENDAMENTOS)) && this.get(this.KEYS.AGENDAMENTOS).length > 0;
+    const hasHist = Array.isArray(this.get(this.KEYS.HISTORICO)) && this.get(this.KEYS.HISTORICO).length > 0;
+    if (hasClientes || hasServicos || hasAg || hasHist) return false;
 
-    // Configuração inicial personalizada
-    this.saveConfig({
-      nome: 'Barbearia Ivo & Lucas',
-      slogan: 'Tradição e estilo',
-      cor: '#b91c1c',
-      owner: 'Ivo & Lucas',
-      emoji: '💈',
-      modulos: { duracao: true, historico: true, agendamentos: true }
-    });
+    // Se não houver dados, cria uma configuração inicial mínima para o negócio
+    const existingCfg = this.get(this.KEYS.CONFIG) || {};
+    if (!existingCfg.nome) {
+      this.saveConfig({
+        nome: 'Barbearia Ivo & Lucas',
+        slogan: 'Tradição e estilo',
+        cor: '#b91c1c',
+        owner: 'Ivo & Lucas',
+        emoji: '💈',
+        modulos: { duracao: true, historico: true, agendamentos: true }
+      });
+    }
 
     return true;
   },
