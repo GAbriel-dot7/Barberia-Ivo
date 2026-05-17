@@ -299,10 +299,12 @@ const originalSearchServicos = () => {
 
 // Substituir no DOMContentLoaded
 document.addEventListener('DOMContentLoaded', async () => {
-  try {
-    RemoteDB.initFromConfig();
-    if (RemoteDB.configured) await RemoteDB.pullAndImportAll();
-  } catch (e) {}
+    try {
+      RemoteDB.initFromConfig();
+      if (RemoteDB.configured && DB.getServicos().length === 0 && DB.getClientes().length === 0) {
+        await RemoteDB.pullAndImportAll();
+      }
+    } catch (e) {}
   renderServicosPaginated();
   document.getElementById('topbarAvatar').textContent = (DB.getConfig().owner || 'A')[0].toUpperCase();
   document.getElementById('searchServicos')?.addEventListener('input', originalSearchServicos);

@@ -375,7 +375,9 @@ function getFilteredHistorico() {
   document.addEventListener('DOMContentLoaded', async () => {
     try {
       RemoteDB.initFromConfig();
-      if (RemoteDB.configured) await RemoteDB.pullAndImportAll();
+      if (RemoteDB.configured && DB.getHistorico().length === 0 && DB.getClientes().length === 0) {
+        await RemoteDB.pullAndImportAll();
+      }
     } catch (e) {}
     renderHistorico();
     document.getElementById('topbarAvatar').textContent = (DB.getConfig().owner || 'A')[0].toUpperCase();
