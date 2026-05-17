@@ -74,9 +74,11 @@ const DB = {
     // garante timestamp de atualização
     config.updatedAt = new Date().toISOString();
     this.set(this.KEYS.CONFIG, config);
-    // Propaga para RemoteDB em background, se configurado
+    // Propaga para RemoteDB via SyncQueue (preferível) ou RemoteDB direto como fallback
     try {
-      if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
+      if (typeof SyncQueue !== 'undefined') {
+        SyncQueue.enqueueSave('configuracoes', config);
+      } else if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
         RemoteDB.saveConfig(config).catch(() => {});
       }
     } catch (e) {}
@@ -108,9 +110,11 @@ const DB = {
     cliente.updatedAt = new Date().toISOString();
     this.set(this.KEYS.CLIENTES, clientes);
     this._cache.CLIENTES = clientes;
-    // Propaga para RemoteDB em background, se disponível
+    // Propaga para RemoteDB via SyncQueue (preferível) ou RemoteDB direto como fallback
     try {
-      if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
+      if (typeof SyncQueue !== 'undefined') {
+        SyncQueue.enqueueSave('clientes', cliente);
+      } else if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
         RemoteDB.saveCliente(cliente).catch(() => {});
       }
     } catch (e) {}
@@ -122,7 +126,9 @@ const DB = {
     this.set(this.KEYS.CLIENTES, clientes);
     this._cache.CLIENTES = clientes;
     try {
-      if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
+      if (typeof SyncQueue !== 'undefined') {
+        SyncQueue.enqueueDelete('clientes', id);
+      } else if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
         RemoteDB.deleteCliente(id).catch(() => {});
       }
     } catch (e) {}
@@ -156,7 +162,9 @@ const DB = {
     this.set(this.KEYS.SERVICOS, servicos);
     this._cache.SERVICOS = servicos;
     try {
-      if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
+      if (typeof SyncQueue !== 'undefined') {
+        SyncQueue.enqueueSave('servicos', servico);
+      } else if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
         RemoteDB.saveServico(servico).catch(() => {});
       }
     } catch (e) {}
@@ -168,7 +176,9 @@ const DB = {
     this.set(this.KEYS.SERVICOS, servicos);
     this._cache.SERVICOS = servicos;
     try {
-      if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
+      if (typeof SyncQueue !== 'undefined') {
+        SyncQueue.enqueueDelete('servicos', id);
+      } else if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
         RemoteDB.deleteServico(id).catch(() => {});
       }
     } catch (e) {}
@@ -203,7 +213,9 @@ const DB = {
     this.set(this.KEYS.AGENDAMENTOS, ags);
     this._cache.AGENDAMENTOS = ags;
     try {
-      if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
+      if (typeof SyncQueue !== 'undefined') {
+        SyncQueue.enqueueSave('agendamentos', ag);
+      } else if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
         RemoteDB.saveAgendamento(ag).catch(() => {});
       }
     } catch (e) {}
@@ -215,7 +227,9 @@ const DB = {
     this.set(this.KEYS.AGENDAMENTOS, ags);
     this._cache.AGENDAMENTOS = ags;
     try {
-      if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
+      if (typeof SyncQueue !== 'undefined') {
+        SyncQueue.enqueueDelete('agendamentos', id);
+      } else if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
         RemoteDB.deleteAgendamento(id).catch(() => {});
       }
     } catch (e) {}
@@ -263,7 +277,9 @@ const DB = {
     this.set(this.KEYS.HISTORICO, hist);
     this._cache.HISTORICO = hist;
     try {
-      if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
+      if (typeof SyncQueue !== 'undefined') {
+        SyncQueue.enqueueSave('historico', entry);
+      } else if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
         RemoteDB.addHistorico(entry).catch(() => {});
       }
     } catch (e) {}
