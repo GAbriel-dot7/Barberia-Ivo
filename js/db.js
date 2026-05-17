@@ -298,69 +298,31 @@ const DB = {
   },
 
   // ──────────────────────────────────────────
-  // SEED (Dados de Demonstração)
+  // SEED (Preparar para Barbearia Ivo & Lucas)
   // ──────────────────────────────────────────
   seedDemoData() {
-    if (this.getClientes().length > 0) return; // Já tem dados
+    // Limpa quaisquer dados de exemplo existentes e prepara o sistema
+    // para uso real pela Barbearia Ivo & Lucas.
+    this.set(this.KEYS.CLIENTES, []);
+    this._cache.CLIENTES = [];
+    this.set(this.KEYS.SERVICOS, []);
+    this._cache.SERVICOS = [];
+    this.set(this.KEYS.AGENDAMENTOS, []);
+    this._cache.AGENDAMENTOS = [];
+    this.set(this.KEYS.HISTORICO, []);
+    this._cache.HISTORICO = [];
 
-    // Clientes demo
-    const clientes = [
-      { nome: 'Ana Paula Silva', telefone: '(11) 98765-4321', email: 'ana@email.com', obs: 'Cliente VIP' },
-      { nome: 'Carlos Mendes', telefone: '(11) 91234-5678', email: 'carlos@email.com', obs: '' },
-      { nome: 'Mariana Costa', telefone: '(11) 99876-5432', email: 'mari@email.com', obs: 'Prefere tarde' },
-      { nome: 'Roberto Lima', telefone: '(11) 97654-3210', email: 'roberto@email.com', obs: '' },
-      { nome: 'Fernanda Souza', telefone: '(11) 96543-2109', email: 'fe@email.com', obs: 'Alérgica a amônia' },
-    ];
-    const clientesIds = [];
-    clientes.forEach(c => {
-      const saved = this.saveCliente(c);
-      clientesIds.push(saved.id);
-    });
-
-    // Serviços demo
-    const servicos = [
-      { nome: 'Corte de Cabelo', preco: '35.00', duracao: '30', descricao: 'Corte masculino completo' },
-      { nome: 'Barba', preco: '25.00', duracao: '20', descricao: 'Aparagem e hidratação' },
-      { nome: 'Corte + Barba', preco: '55.00', duracao: '50', descricao: 'Combo completo' },
-      { nome: 'Hidratação', preco: '45.00', duracao: '40', descricao: 'Tratamento capilar' },
-      { nome: 'Coloração', preco: '80.00', duracao: '90', descricao: 'Coloração completa' },
-    ];
-    const servicosIds = [];
-    servicos.forEach(s => {
-      const saved = this.saveServico(s);
-      servicosIds.push(saved.id);
-    });
-
-    // Agendamentos para hoje
-    const hoje = new Date().toISOString().slice(0, 10);
-    const agendamentosDemos = [
-      { clienteId: clientesIds[0], servicoId: servicosIds[0], data: hoje, hora: '09:00', valor: '35.00', status: 'agendado', observacao: '' },
-      { clienteId: clientesIds[1], servicoId: servicosIds[2], data: hoje, hora: '10:00', valor: '55.00', status: 'concluido', observacao: '' },
-      { clienteId: clientesIds[2], servicoId: servicosIds[3], data: hoje, hora: '11:30', valor: '45.00', status: 'agendado', observacao: 'Trazer amostras' },
-      { clienteId: clientesIds[3], servicoId: servicosIds[1], data: hoje, hora: '14:00', valor: '25.00', status: 'agendado', observacao: '' },
-      { clienteId: clientesIds[4], servicoId: servicosIds[4], data: hoje, hora: '16:00', valor: '80.00', status: 'agendado', observacao: '' },
-    ];
-    agendamentosDemos.forEach(a => this.saveAgendamento(a));
-
-    // Histórico (mês atual)
-    const histEntries = [
-      { clienteId: clientesIds[0], servicoId: servicosIds[0], valor: 35, data: hoje, hora: '09:00' },
-      { clienteId: clientesIds[1], servicoId: servicosIds[2], valor: 55, data: hoje, hora: '10:00' },
-      { clienteId: clientesIds[2], servicoId: servicosIds[0], valor: 35, data: hoje, hora: '11:00' },
-      { clienteId: clientesIds[3], servicoId: servicosIds[3], valor: 45, data: hoje, hora: '14:00' },
-      { clienteId: clientesIds[4], servicoId: servicosIds[4], valor: 80, data: hoje, hora: '16:00' },
-    ];
-    histEntries.forEach(h => this.addHistorico(h));
-
-    // Config padrão
+    // Configuração inicial personalizada
     this.saveConfig({
-      nome: 'Studio Barber',
-      slogan: 'Estilo é tudo',
-      cor: '#2563EB',
-      owner: 'João',
-      emoji: '✂️',
+      nome: 'Barbearia Ivo & Lucas',
+      slogan: 'Tradição e estilo',
+      cor: '#b91c1c',
+      owner: 'Ivo & Lucas',
+      emoji: '💈',
       modulos: { duracao: true, historico: true, agendamentos: true }
     });
+
+    return true;
   },
 
   // ──────────────────────────────────────────
