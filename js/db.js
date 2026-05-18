@@ -71,17 +71,23 @@ const DB = {
   },
 
   saveConfig(config) {
+    const current = this.get(this.KEYS.CONFIG) || {};
+    const merged = { ...current, ...config };
+    if (current.supabase && config.supabase == null) {
+      merged.supabase = current.supabase;
+    }
     // garante timestamp de atualização
-    config.updatedAt = new Date().toISOString();
-    this.set(this.KEYS.CONFIG, config);
+    merged.updatedAt = new Date().toISOString();
+    this.set(this.KEYS.CONFIG, merged);
     // Propaga para RemoteDB via SyncQueue (preferível) ou RemoteDB direto como fallback
     try {
       if (typeof SyncQueue !== 'undefined') {
-        SyncQueue.enqueueSave('configuracoes', config);
+        SyncQueue.enqueueSave('configuracoes', merged);
       } else if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
-        RemoteDB.saveConfig(config).catch(() => {});
+        RemoteDB.saveConfig(merged).catch(() => {});
       }
     } catch (e) {}
+    return merged;
   },
 
   // ──────────────────────────────────────────
@@ -361,6 +367,31 @@ const DB = {
     return true;
   },
 
+  mergeData(payload = {}) {
+    if (payload.config) {
+      const localConfig = this.get(this.KEYS.CONFIG) || {};
+      const remoteConfig = payload.config || {};
+      const mergedConfig = { ...localConfig, ...remoteConfig };
+      if (localConfig.supabase && remoteConfig.supabase == null) {
+        mergedConfig.supabase = localConfig.supabase;
+      }
+      this.set(this.KEYS.CONFIG, mergedConfig);
+    }
+
+    const mergeCollection = (key, remoteItems) => {
+      if (!Array.isArray(remoteItems)) return;
+      const localItems = Array.isArray(this.get(key)) ? this.get(key) : [];
+      const merged = this._mergeCollection(localItems, remoteItems);
+      this.set(key, merged);
+    };
+
+    mergeCollection(this.KEYS.CLIENTES, payload.clientes);
+    mergeCollection(this.KEYS.SERVICOS, payload.servicos);
+    mergeCollection(this.KEYS.AGENDAMENTOS, payload.agendamentos);
+    mergeCollection(this.KEYS.HISTORICO, payload.historico);
+    return true;
+  },
+
   // ──────────────────────────────────────────
   // SEED (Preparar para Barbearia Ivo & Lucas)
   // ──────────────────────────────────────────
@@ -393,6 +424,34 @@ const DB = {
   // ──────────────────────────────────────────
   _genId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+  },
+
+  _itemTimestamp(item) {
+    const raw = item?.updatedAt || item?.updated_at || item?.registradoEm || item?.registrado_em || item?.createdAt || item?.created_at || '';
+    const ts = Date.parse(raw);
+    return Number.isFinite(ts) ? ts : 0;
+  },
+
+  _pickNewest(localItem, remoteItem) {
+    if (!localItem) return remoteItem;
+    if (!remoteItem) return localItem;
+    const localTime = this._itemTimestamp(localItem);
+    const remoteTime = this._itemTimestamp(remoteItem);
+    if (remoteTime > localTime) return remoteItem;
+    return localItem;
+  },
+
+  _mergeCollection(localItems = [], remoteItems = []) {
+    const byId = new Map();
+    localItems.forEach(item => {
+      if (item && item.id != null) byId.set(item.id, item);
+    });
+    remoteItems.forEach(item => {
+      if (!item || item.id == null) return;
+      const current = byId.get(item.id);
+      byId.set(item.id, this._pickNewest(current, item));
+    });
+    return Array.from(byId.values()).sort((a, b) => this._itemTimestamp(b) - this._itemTimestamp(a));
   },
 };
 

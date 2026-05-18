@@ -375,7 +375,7 @@ function getFilteredHistorico() {
   document.addEventListener('DOMContentLoaded', async () => {
     try {
       RemoteDB.initFromConfig();
-      if (RemoteDB.configured && DB.getHistorico().length === 0 && DB.getClientes().length === 0) {
+      if (RemoteDB.configured) {
         await RemoteDB.pullAndImportAll();
       }
     } catch (e) {}
@@ -389,5 +389,8 @@ function getFilteredHistorico() {
 <script src="../js/auth.js"></script>
 <script src="../js/mobile.js"></script>
 <script src="../js/remote-db.js"></script>
+<script src="../js/sync-queue.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
+<script src="../js/realtime.js"></script>
 </body>
 </html>

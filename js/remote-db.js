@@ -315,13 +315,20 @@ const RemoteDB = {
   async pullAndImportAll() {
     if (!this.initFromConfig()) return false;
     try {
+      if (typeof SyncQueue !== 'undefined') {
+        await SyncQueue.processQueue();
+      }
       const clientes = await this.getClientes();
       const servicos = await this.getServicos();
       const agendamentos = await this.getAgendamentos();
       const historico = await this.getHistorico();
       const usuarios = await this.getUsuarios();
-      // Import into local DB for offline mode
-      DB.importData({ config: await this.getConfig(), clientes, servicos, agendamentos, historico });
+      // Merge remoto com o local, preservando o que foi atualizado mais recentemente em cada dispositivo
+      if (DB.mergeData) {
+        DB.mergeData({ config: await this.getConfig(), clientes, servicos, agendamentos, historico });
+      } else {
+        DB.importData({ config: await this.getConfig(), clientes, servicos, agendamentos, historico });
+      }
       if (Auth.importUsuarios) Auth.importUsuarios(usuarios || []);
       return true;
     } catch (e) { return false; }

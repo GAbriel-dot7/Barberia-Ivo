@@ -273,6 +273,9 @@
 <script src="../js/ui.js"></script>
 <script src="../js/auth.js"></script>
 <script src="../js/mobile.js"></script>
+<script src="../js/sync-queue.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
+<script src="../js/realtime.js"></script>
 
 <script src="../js/remote-db.js"></script>
 
@@ -705,7 +708,7 @@ window.salvarAgendamento = function() {
   document.addEventListener('DOMContentLoaded', async () => {
     try {
       RemoteDB.initFromConfig();
-      if (RemoteDB.configured && DB.getAgendamentos().length === 0 && DB.getClientes().length === 0) {
+      if (RemoteDB.configured) {
         await RemoteDB.pullAndImportAll();
       }
     } catch (e) {}
