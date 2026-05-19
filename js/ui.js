@@ -498,6 +498,20 @@ document.addEventListener('DOMContentLoaded', () => {
   DarkMode.init();        // NOVO
   BackupReminder.init();  // NOVO
 
+  // Inicializa os módulos de sincronização remota
+  try {
+    if (typeof RemoteDB !== 'undefined') RemoteDB.initFromConfig();
+    if (typeof SyncQueue !== 'undefined') {
+      SyncQueue.init();
+      // tenta processar imediatamente qualquer operação pendente
+      setTimeout(() => { try { SyncQueue.processQueue(); } catch (e) {} }, 500);
+    }
+    if (typeof Realtime !== 'undefined') {
+      // Inicializa após breve atraso para garantir que RemoteDB esteja pronto
+      setTimeout(() => { try { Realtime.init(); } catch (e) {} }, 800);
+    }
+  } catch (e) { console.warn('Sync init error', e); }
+
   // Verificar agendamentos próximos a cada 5 minutos
   checkUpcomingAppointments();
   setInterval(checkUpcomingAppointments, 5 * 60 * 1000);

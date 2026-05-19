@@ -133,8 +133,17 @@ async function testSupabaseConnection() {
       document.getElementById('supabaseStatus').textContent = 'Conexão OK.';
     } else {
       const txt = await res.text();
-      Notify.error('Falha na conexão', `Status ${res.status}: ${txt}`);
-      document.getElementById('supabaseStatus').textContent = 'Falha: ' + res.status;
+      // Mensagens mais amigáveis para erros comuns
+      if (res.status === 404 || /bucket not found/i.test(txt)) {
+        Notify.error('Falha na conexão', 'Bucket não encontrado. Crie o bucket informado no painel do Supabase (Storage).');
+        document.getElementById('supabaseStatus').textContent = 'Erro: bucket não encontrado (404).';
+      } else if (res.status === 401 || /invalid token|unauthorized/i.test(txt)) {
+        Notify.error('Falha na conexão', 'Chave ANON inválida ou sem permissão. Verifique a ANON KEY do projeto.');
+        document.getElementById('supabaseStatus').textContent = 'Erro: chave inválida/sem permissão (401).';
+      } else {
+        Notify.error('Falha na conexão', `Status ${res.status}: ${txt}`);
+        document.getElementById('supabaseStatus').textContent = 'Falha: ' + res.status;
+      }
     }
   } catch (err) {
     Notify.error('Erro de conexão', err.message || String(err));

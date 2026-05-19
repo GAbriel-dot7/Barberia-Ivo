@@ -26,6 +26,7 @@ const DB = {
   SUPABASE_BOOTSTRAP: {
     url: 'https://ggomwspyrhnvlnjlwnzj.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdnb213c3B5cmhudmxuamx3bnpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NDMxMzEsImV4cCI6MjA5NDUxOTEzMX0.Qvw0X0ympxBKG6sI3C0zPfIvEYBXY8J2RfQ-iBqtqkA',
+    bucket: 'ivo',
   },
 
   // ──────────────────────────────────────────
