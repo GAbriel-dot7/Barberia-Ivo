@@ -3,7 +3,9 @@
 
 function loadSupabaseInputsFromConfig() {
   const cfg = DB.getConfig() || {};
-  const sup = cfg.supabase || {};
+  const sup = (cfg.supabase && cfg.supabase.url && cfg.supabase.anonKey)
+    ? cfg.supabase
+    : (DB.getSupabaseConfig ? DB.getSupabaseConfig() : (cfg.supabase || {}));
   document.getElementById('supabaseUrl').value = sup.url || '';
   document.getElementById('supabaseAnonKey').value = sup.anonKey || '';
   document.getElementById('supabaseBucket').value = sup.bucket || '';

@@ -23,6 +23,11 @@ const DB = {
     HISTORICO:     'sgcm_historico',
   },
 
+  SUPABASE_BOOTSTRAP: {
+    url: 'https://ggomwspyrhnvlnjlwnzj.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdnb213c3B5cmhudmxuamx3bnpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NDMxMzEsImV4cCI6MjA5NDUxOTEzMX0.Qvw0X0ympxBKG6sI3C0zPfIvEYBXY8J2RfQ-iBqtqkA',
+  },
+
   // ──────────────────────────────────────────
   // HELPERS GENÉRICOS
   // ──────────────────────────────────────────
@@ -49,6 +54,15 @@ const DB = {
     } catch { return false; }
   },
 
+  getSupabaseConfig() {
+    const current = this.get(this.KEYS.CONFIG) || {};
+    const stored = current.supabase || {};
+    if (stored.url && stored.anonKey) {
+      return { ...stored };
+    }
+    return { ...this.SUPABASE_BOOTSTRAP, ...stored };
+  },
+
   // ──────────────────────────────────────────
   // CONFIGURAÇÕES DO NEGÓCIO
   // ──────────────────────────────────────────
@@ -60,6 +74,7 @@ const DB = {
       cor: '#2563EB',
       owner: 'Admin',
       emoji: '🏪',
+      supabase: this.getSupabaseConfig(),
       modulos: {
         duracao: true,
         historico: true,
@@ -73,8 +88,8 @@ const DB = {
   saveConfig(config) {
     const current = this.get(this.KEYS.CONFIG) || {};
     const merged = { ...current, ...config };
-    if (current.supabase && config.supabase == null) {
-      merged.supabase = current.supabase;
+    if (config.supabase == null) {
+      merged.supabase = current.supabase || this.getSupabaseConfig();
     }
     // garante timestamp de atualização
     merged.updatedAt = new Date().toISOString();
@@ -372,8 +387,8 @@ const DB = {
       const localConfig = this.get(this.KEYS.CONFIG) || {};
       const remoteConfig = payload.config || {};
       const mergedConfig = { ...localConfig, ...remoteConfig };
-      if (localConfig.supabase && remoteConfig.supabase == null) {
-        mergedConfig.supabase = localConfig.supabase;
+      if (remoteConfig.supabase == null) {
+        mergedConfig.supabase = localConfig.supabase || this.getSupabaseConfig();
       }
       this.set(this.KEYS.CONFIG, mergedConfig);
     }
@@ -412,6 +427,7 @@ const DB = {
         cor: '#b91c1c',
         owner: 'Ivo & Lucas',
         emoji: '💈',
+        supabase: this.getSupabaseConfig(),
         modulos: { duracao: true, historico: true, agendamentos: true }
       });
     }
@@ -423,7 +439,79 @@ const DB = {
   // INTERNAL UTILS
   // ──────────────────────────────────────────
   _genId() {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
     return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+  },
+
+  _isUuid(value) {
+    return typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+  },
+
+  migrateLegacyIds() {
+    const clientes = this.getClientes();
+    const servicos = this.getServicos();
+    const agendamentos = this.getAgendamentos();
+    const historico = this.getHistorico();
+    const usuarios = (typeof Auth !== 'undefined' && typeof Auth.getUsuarios === 'function') ? Auth.getUsuarios() : [];
+
+    const allItems = [...clientes, ...servicos, ...agendamentos, ...historico, ...usuarios];
+    if (!allItems.some(item => item && item.id && !this._isUuid(item.id))) {
+      return false;
+    }
+
+    const mappings = {
+      clientes: new Map(),
+      servicos: new Map(),
+      agendamentos: new Map(),
+      historico: new Map(),
+      usuarios: new Map(),
+    };
+
+    const remap = (table, oldId) => {
+      if (!oldId) return '';
+      if (this._isUuid(oldId)) return oldId;
+      const map = mappings[table];
+      if (!map.has(oldId)) {
+        map.set(oldId, this._genId());
+      }
+      return map.get(oldId);
+    };
+
+    const migratedClientes = clientes.map(item => ({ ...item, id: remap('clientes', item.id) }));
+    const migratedServicos = servicos.map(item => ({ ...item, id: remap('servicos', item.id) }));
+    const migratedUsuarios = usuarios.map(item => ({ ...item, id: remap('usuarios', item.id) }));
+    const migratedAgendamentos = agendamentos.map(item => ({
+      ...item,
+      id: remap('agendamentos', item.id),
+      clienteId: remap('clientes', item.clienteId),
+      servicoId: remap('servicos', item.servicoId),
+      funcionarioId: item.funcionarioId ? remap('usuarios', item.funcionarioId) : '',
+    }));
+    const migratedHistorico = historico.map(item => ({
+      ...item,
+      id: remap('historico', item.id),
+      clienteId: item.clienteId ? remap('clientes', item.clienteId) : '',
+      servicoId: item.servicoId ? remap('servicos', item.servicoId) : '',
+      funcionarioId: item.funcionarioId ? remap('usuarios', item.funcionarioId) : '',
+      agendamentoId: item.agendamentoId ? remap('agendamentos', item.agendamentoId) : '',
+    }));
+
+    this.set(this.KEYS.CLIENTES, migratedClientes);
+    this.set(this.KEYS.SERVICOS, migratedServicos);
+    this.set(this.KEYS.AGENDAMENTOS, migratedAgendamentos);
+    this.set(this.KEYS.HISTORICO, migratedHistorico);
+    this._cache.CLIENTES = migratedClientes;
+    this._cache.SERVICOS = migratedServicos;
+    this._cache.AGENDAMENTOS = migratedAgendamentos;
+    this._cache.HISTORICO = migratedHistorico;
+
+    if (typeof Auth !== 'undefined' && typeof Auth.importUsuarios === 'function') {
+      Auth.importUsuarios(migratedUsuarios);
+    }
+
+    return true;
   },
 
   _itemTimestamp(item) {

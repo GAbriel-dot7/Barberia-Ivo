@@ -264,7 +264,8 @@ O sistema é responsivo para tablets e desktops. Em telas menores (< 768px):
 
     Chart.js para gráficos interativos
 
-    LocalStorage para persistência
+    LocalStorage como cache/offline fallback
+    Supabase como sincronização compartilhada em tempo real
 
 📋 Roadmap (Próximas Versões)
 Fase 3 (Preparação para Venda)
@@ -297,7 +298,7 @@ Para dúvidas, sugestões ou contratempos, entre em contato com o desenvolvedor.
 
 ## ⚙️ Configurar Supabase (sincronização remota) — Rápido
 
-Passos mínimos para habilitar a sincronização remota usando Supabase Storage e a API REST (por cliente/projeto):
+Passos mínimos para habilitar a sincronização remota usando Supabase Storage e a API REST. O app já vem com um bootstrap padrão do projeto para sincronizar automaticamente em qualquer navegador/dispositivo, e o LocalStorage fica como cache local/offline:
 
 1. Crie um projeto no Supabase
     - Acesse https://supabase.com e crie um novo projeto (escolha região e senha do banco).

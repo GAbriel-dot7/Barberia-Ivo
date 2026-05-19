@@ -165,7 +165,9 @@ const RemoteDB = {
   initFromConfig() {
     try {
       const cfg = DB.getConfig() || {};
-      const sup = cfg.supabase || {};
+      const sup = (cfg.supabase && cfg.supabase.url && cfg.supabase.anonKey)
+        ? cfg.supabase
+        : (DB.getSupabaseConfig ? DB.getSupabaseConfig() : (cfg.supabase || {}));
       if (sup.url && sup.anonKey) {
         this.url = sup.url.replace(/\/$/, '');
         this.anonKey = sup.anonKey;
@@ -244,8 +246,12 @@ const RemoteDB = {
     try {
       const payload = this._toSupabase(table, item);
       if (item.id) {
-        const res = await this._api(table, 'PATCH', payload, `id=eq.${encodeURIComponent(item.id)}`);
-        return Array.isArray(res) && res[0] ? this._fromSupabase(table, res[0]) : item;
+        const patched = await this._api(table, 'PATCH', payload, `id=eq.${encodeURIComponent(item.id)}`);
+        if (Array.isArray(patched) && patched[0]) {
+          return this._fromSupabase(table, patched[0]);
+        }
+        const inserted = await this._api(table, 'POST', payload, '');
+        return Array.isArray(inserted) && inserted[0] ? this._fromSupabase(table, inserted[0]) : item;
       } else {
         const res = await this._api(table, 'POST', payload, '');
         return Array.isArray(res) && res[0] ? this._fromSupabase(table, res[0]) : item;
@@ -315,6 +321,10 @@ const RemoteDB = {
   async pullAndImportAll() {
     if (!this.initFromConfig()) return false;
     try {
+      if (typeof DB.migrateLegacyIds === 'function') {
+        DB.migrateLegacyIds();
+      }
+
       if (typeof SyncQueue !== 'undefined') {
         await SyncQueue.processQueue();
       }
@@ -323,6 +333,35 @@ const RemoteDB = {
       const agendamentos = await this.getAgendamentos();
       const historico = await this.getHistorico();
       const usuarios = await this.getUsuarios();
+      const snapshot = DB.exportData ? DB.exportData() : null;
+      const localUsuarios = (typeof Auth !== 'undefined' && typeof Auth.getUsuarios === 'function') ? Auth.getUsuarios() : [];
+
+      const syncLocalCollection = async (localItems, remoteItems, saveFn) => {
+        if (!Array.isArray(localItems) || !localItems.length) return;
+        const remoteById = new Map((Array.isArray(remoteItems) ? remoteItems : []).map(item => [item && item.id, item]));
+        for (const item of localItems) {
+          if (!item || !item.id) continue;
+          const remoteItem = remoteById.get(item.id);
+          const shouldPush = !remoteItem || DB._itemTimestamp(item) >= DB._itemTimestamp(remoteItem);
+          if (shouldPush) {
+            await saveFn.call(this, item);
+          }
+        }
+      };
+
+      if (snapshot && snapshot.config) {
+        const remoteConfig = await this.getConfig();
+        if (DB._itemTimestamp(snapshot.config) >= DB._itemTimestamp(remoteConfig)) {
+          await this.saveConfig(snapshot.config);
+        }
+      }
+
+      await syncLocalCollection(snapshot?.clientes, clientes, this.saveCliente);
+      await syncLocalCollection(snapshot?.servicos, servicos, this.saveServico);
+      await syncLocalCollection(snapshot?.agendamentos, agendamentos, this.saveAgendamento);
+      await syncLocalCollection(snapshot?.historico, historico, this.addHistorico);
+      await syncLocalCollection(localUsuarios, usuarios, this.saveUsuario);
+
       // Merge remoto com o local, preservando o que foi atualizado mais recentemente em cada dispositivo
       if (DB.mergeData) {
         DB.mergeData({ config: await this.getConfig(), clientes, servicos, agendamentos, historico });

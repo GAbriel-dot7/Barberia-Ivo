@@ -10,7 +10,9 @@ const Realtime = {
   init() {
     try {
       const cfg = DB.getConfig() || {};
-      const sup = cfg.supabase || {};
+      const sup = (cfg.supabase && cfg.supabase.url && cfg.supabase.anonKey)
+        ? cfg.supabase
+        : (DB.getSupabaseConfig ? DB.getSupabaseConfig() : (cfg.supabase || {}));
       if (!sup.url || !sup.anonKey) return false;
       if (typeof supabase === 'undefined') {
         console.warn('Supabase UMD não carregado; Realtime não inicializado');
