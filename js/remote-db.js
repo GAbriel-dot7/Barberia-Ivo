@@ -7,10 +7,6 @@ const RemoteDB = {
   configured: false,
   url: '',
   anonKey: '',
-  // fail control to avoid request floods when credentials are invalid
-  failedAttempts: 0,
-  maxFailedAttempts: 4,
-  cooldownUntil: 0, // timestamp ms until which requests are paused
 
   _toSupabase(table, item = {}) {
     if (!item) return item;
@@ -196,33 +192,11 @@ const RemoteDB = {
 
   async _api(table, method = 'GET', body = null, filter = '') {
     if (!this.configured) throw new Error('RemoteDB not configured');
-    // respect cooldown when too many unauthorized responses were received
-    if (this.cooldownUntil && Date.now() < this.cooldownUntil) {
-      throw new Error('RemoteDB paused due to repeated authorization failures');
-    }
     const url = `${this.url}/rest/v1/${table}${filter ? `?${filter}` : '?select=*'}`;
     const opts = { method, headers: this._headers() };
     if (body !== null) opts.body = JSON.stringify(body);
     const res = await fetch(url, opts);
-    // Handle unauthorized explicitly to stop continuous retries
-    if (res.status === 401 || res.status === 403) {
-      this.failedAttempts = (this.failedAttempts || 0) + 1;
-      // after several failures, disable configured and set cooldown
-      if (this.failedAttempts >= this.maxFailedAttempts) {
-        this.configured = false;
-        this.cooldownUntil = Date.now() + 60 * 1000; // pause 1 minute
-        try {
-          if (typeof Notify !== 'undefined') Notify.error('Supabase', 'Chave ANON inválida ou sem permissão. Verifique Configurações.');
-        } catch (e) {}
-        console.warn('RemoteDB disabled due to repeated 401/403 responses');
-        throw new Error(`Supabase unauthorized (${res.status})`);
-      }
-      throw new Error(`Supabase unauthorized (${res.status})`);
-    }
-
     if (!res.ok) throw new Error(`Supabase error ${res.status}`);
-    // On success, reset failure counter
-    this.failedAttempts = 0;
     // Some endpoints (DELETE) return empty body
     try { return await res.json(); } catch { return null; }
   },
