@@ -83,7 +83,7 @@ const Realtime = {
         case 'servicos': DB.saveServico(obj); break;
         case 'agendamentos': DB.saveAgendamento(obj); break;
         case 'historico': DB.addHistorico(obj); break;
-        case 'configuracoes': DB.saveConfig(obj); break;
+        case 'configuracoes': DB.saveConfig(obj, { skipRemote: true }); break;
         case 'usuarios': if (Auth.saveUsuario) Auth.saveUsuario(obj); break;
         default: break;
       }

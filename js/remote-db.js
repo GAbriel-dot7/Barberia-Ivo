@@ -228,7 +228,7 @@ const RemoteDB = {
       }
       return true;
     } catch (e) {
-      return DB.saveConfig(cfg);
+      return false;
     }
   },
 

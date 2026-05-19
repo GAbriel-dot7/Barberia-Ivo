@@ -85,7 +85,7 @@ const DB = {
     return cfg;
   },
 
-  saveConfig(config) {
+  saveConfig(config, options = {}) {
     const current = this.get(this.KEYS.CONFIG) || {};
     const merged = { ...current, ...config };
     if (config.supabase == null) {
@@ -94,14 +94,16 @@ const DB = {
     // garante timestamp de atualização
     merged.updatedAt = new Date().toISOString();
     this.set(this.KEYS.CONFIG, merged);
-    // Propaga para RemoteDB via SyncQueue (preferível) ou RemoteDB direto como fallback
-    try {
-      if (typeof SyncQueue !== 'undefined') {
-        SyncQueue.enqueueSave('configuracoes', merged);
-      } else if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
-        RemoteDB.saveConfig(merged).catch(() => {});
-      }
-    } catch (e) {}
+    if (!options.skipRemote) {
+      // Propaga para RemoteDB via SyncQueue (preferível) ou RemoteDB direto como fallback
+      try {
+        if (typeof SyncQueue !== 'undefined') {
+          SyncQueue.enqueueSave('configuracoes', merged);
+        } else if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
+          RemoteDB.saveConfig(merged).catch(() => {});
+        }
+      } catch (e) {}
+    }
     return merged;
   },
 
