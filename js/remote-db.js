@@ -11,6 +11,7 @@ const RemoteDB = {
   failedAttempts: 0,
   maxFailedAttempts: 4,
   cooldownUntil: 0, // timestamp ms until which requests are paused
+  validatedUntil: 0, // timestamp until which config is considered validated
 
   _toSupabase(table, item = {}) {
     if (!item) return item;
@@ -176,6 +177,10 @@ const RemoteDB = {
         this.url = sup.url.replace(/\/$/, '');
         this.anonKey = sup.anonKey;
         this.configured = true;
+        // perform a lightweight async validation only once per minute to avoid floods
+        if (!this.validatedUntil || Date.now() > this.validatedUntil) {
+          this.validateConfig();
+        }
       } else {
         this.configured = false;
       }
@@ -183,6 +188,30 @@ const RemoteDB = {
       this.configured = false;
     }
     return this.configured;
+  },
+
+  async validateConfig() {
+    if (!this.configured) return false;
+    try {
+      const url = `${this.url}/rest/v1/configuracoes?select=id&limit=1`;
+      const res = await fetch(url, { method: 'GET', headers: this._headers() });
+      if (res.status === 401 || res.status === 403) {
+        this.failedAttempts = (this.failedAttempts || 0) + 1;
+        if (this.failedAttempts >= this.maxFailedAttempts) {
+          this.configured = false;
+          this.cooldownUntil = Date.now() + 60 * 1000;
+          try { if (typeof Notify !== 'undefined') Notify.error('Supabase', 'Chave ANON inválida ou sem permissão. Verifique Configurações.'); } catch (e) {}
+        }
+        return false;
+      }
+      if (!res.ok) return false;
+      // success: reset failures and consider validated for some time
+      this.failedAttempts = 0;
+      this.validatedUntil = Date.now() + 60 * 1000; // skip revalidation for 1 minute
+      return true;
+    } catch (e) {
+      return false;
+    }
   },
 
   _headers() {
