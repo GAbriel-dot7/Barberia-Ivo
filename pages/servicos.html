@@ -358,7 +358,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       try {
         if (RemoteDB && RemoteDB.configured) {
           const remoteSaved = await RemoteDB.saveServico(servico);
-          DB.saveServico(remoteSaved);
+          if (remoteSaved && remoteSaved.id) {
+            DB.saveServico(remoteSaved);
+          } else {
+            DB.saveServico(servico);
+          }
         } else {
           DB.saveServico(servico);
         }

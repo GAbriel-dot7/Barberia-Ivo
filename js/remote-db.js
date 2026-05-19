@@ -256,7 +256,7 @@ const RemoteDB = {
         const res = await this._api(table, 'POST', payload, '');
         return Array.isArray(res) && res[0] ? this._fromSupabase(table, res[0]) : item;
       }
-    } catch (e) { return DB['save' + table.slice(0, -1).charAt(0).toUpperCase() + table.slice(1, -1)] ? DB['save' + table.slice(0, -1).charAt(0).toUpperCase() + table.slice(1, -1)](item) : item; }
+    } catch (e) { return false; }
   },
 
   async _delete(table, id) {

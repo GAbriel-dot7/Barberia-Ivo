@@ -626,7 +626,11 @@ window.salvarAgendamento = function() {
       try {
         if (RemoteDB && RemoteDB.configured) {
           const saved = await RemoteDB.saveAgendamento(agendamento);
-          DB.saveAgendamento(saved);
+          if (saved && saved.id) {
+            DB.saveAgendamento(saved);
+          } else {
+            DB.saveAgendamento(agendamento);
+          }
         } else {
           DB.saveAgendamento(agendamento);
         }
@@ -652,16 +656,17 @@ window.salvarAgendamento = function() {
           if (RemoteDB && RemoteDB.configured) {
             const updated = { ...ag, status: 'concluido' };
             const saved = await RemoteDB.saveAgendamento(updated);
+            const agToUse = saved && saved.id ? saved : updated;
             await RemoteDB.addHistorico({
-              clienteId: saved.clienteId,
-              servicoId: saved.servicoId,
-              funcionarioId: saved.funcionarioId || '',
-              valor: saved.valor || 0,
-              data: saved.data,
-              hora: saved.hora,
-              observacao: saved.observacao || ''
+              clienteId: agToUse.clienteId,
+              servicoId: agToUse.servicoId,
+              funcionarioId: agToUse.funcionarioId || '',
+              valor: agToUse.valor || 0,
+              data: agToUse.data,
+              hora: agToUse.hora,
+              observacao: agToUse.observacao || ''
             });
-            DB.saveAgendamento(saved);
+            DB.saveAgendamento(agToUse);
           } else {
             DB.concluirAgendamento(id);
           }

@@ -582,8 +582,12 @@ function exportClientesToPDF() {
       try {
         if (RemoteDB && RemoteDB.configured) {
           const remoteSaved = await RemoteDB.saveCliente(cliente);
-          // ensure local copy matches remote
-          DB.saveCliente(remoteSaved);
+          // ensure local copy matches remote only when remote save succeeded
+          if (remoteSaved && remoteSaved.id) {
+            DB.saveCliente(remoteSaved);
+          } else {
+            DB.saveCliente(cliente);
+          }
         } else {
           DB.saveCliente(cliente);
         }
