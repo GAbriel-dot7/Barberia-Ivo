@@ -154,4 +154,25 @@ async function testSupabaseConnection() {
 // Inicializa campos quando a página carregar
 document.addEventListener('DOMContentLoaded', () => {
   loadSupabaseInputsFromConfig();
+  // Se houver configuração preenchida, faz um teste automático de conexão
+  try {
+    const url = document.getElementById('supabaseUrl').value.trim();
+    const anon = document.getElementById('supabaseAnonKey').value.trim();
+    const bucket = document.getElementById('supabaseBucket').value.trim();
+    if (url && anon && bucket) {
+      // aguarda um pouco para evitar chamadas concorrentes no carregamento
+      setTimeout(() => { try { testSupabaseConnection(); } catch (e) {} }, 800);
+    }
+  } catch (e) {}
+  // Se houver configuração, testa automaticamente e tenta processar sincronização
+  try {
+    if (typeof RemoteDB !== 'undefined' && RemoteDB.initFromConfig()) {
+      // delay curto para evitar competição com outros inits
+      setTimeout(() => {
+        try { testSupabaseConnection(); } catch (e) {}
+        try { if (typeof SyncQueue !== 'undefined') SyncQueue.processQueue(); } catch (e) {}
+        try { if (typeof Realtime !== 'undefined') Realtime.init(); } catch (e) {}
+      }, 500);
+    }
+  } catch (e) {}
 });
